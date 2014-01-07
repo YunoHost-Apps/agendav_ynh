@@ -22,10 +22,29 @@
 class Login extends CI_Controller {
 
     public function index() {
+
+    // No session
+    
+    $this->extended_logs->message('INFO','inside login controller');
+        $user = $_SERVER['PHP_AUTH_USER'];
+        $passwd = $_SERVER['PHP_AUTH_PW'];
+    $this->extended_logs->message('INFO','user = ' . $user);
+        $data = array(
+                'user' => mb_strtolower($user),
+                'passwd' => $passwd,
+                'prefs' =>
+                    $this->userpref->load_prefs($user)->getAll(),
+                );
+     $this->extended_logs->message('INFO','creating session for ' . $user);
+        $this->auth->new_session($data);
+
         // Already authenticated?
         if ($this->auth->is_authenticated()) {
+            $this->extended_logs->message('INFO','auth->is_authenticated() = TRUE, redirecting to main');
+
             redirect('/main');
         }
+        $this->extended_logs->message('INFO','not authenticated');
 
         $this->load->helper('form');
         $this->load->library('form_validation');
