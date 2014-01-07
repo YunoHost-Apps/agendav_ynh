@@ -1,9 +1,9 @@
 {
-    "name": "Agendav",
+    "name": "AgenDAV",
     "id": "agendav",
     "description": {
-        "en": "Agendav",
-        "fr": "Agendav"
+        "en": "CalDAV web client",
+        "fr": "CalDAV web client"
     },
     "developer": {
         "name": "julien",
@@ -16,14 +16,14 @@
             {
                 "name": "domain",
                 "ask": {
-                    "en": "Choose a domain for Agendav"
+                    "en": "Choose a domain for AgenDAV"
                 },
                 "example": "domain.org"
             },
             {
                 "name": "path",
                 "ask": {
-                    "en": "Choose a path for Agendav"
+                    "en": "Choose a path for AgenDAV"
                 },
                 "example": "/agendav",
                 "default": "/agendav"
