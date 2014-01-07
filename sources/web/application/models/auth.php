@@ -58,6 +58,9 @@ class Auth extends CI_Model {
     /**
       */
     function is_authenticated() {
+        if ($this->user !== $_SERVER['PHP_AUTH_USER']) {
+            redirect('/login');
+        }
         return ($this->user === FALSE) ? FALSE : TRUE;
     }
 
