@@ -258,7 +258,7 @@ $config['default_first_day'] = 1;
 | Please, use a valid timezone from http://php.net/timezones
 */
 
-$config['default_timezone'] = 'Europe/Paris';
+$config['default_timezone'] = 'YNH_TIMEZONE';
 
 /*
 |--------------------------------------------------------------------------

@@ -44,6 +44,8 @@ logout_redirect="https://$domain/ynhsso"
 sed -i "s@YNH_LOGOUT_REDIRECT_TO@$logout_redirect@g" ../conf/config.php
 lang=$(sudo bash -c "echo $LANG | cut -d '.' -f 1")
 sed -i "s@YNH_LANG@$lang@g" ../conf/config.php
+timezone=$(cat /etc/timezone)
+sed -i "s@YNH_TIMEZONE@$timezone@g" ../conf/config.php
 
 # copy config files
 sudo cp ../conf/{config.php,database.php,caldav.php} $final_path/web/config/
