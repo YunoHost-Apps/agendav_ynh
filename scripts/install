@@ -54,6 +54,7 @@ sudo chown www-data: $logdir
 sudo chmod 755 $logdir
 sed -i "s@YNH_LOG_PATH@$logdir@g" ../conf/config.php
 encryptkey=$(dd if=/dev/urandom bs=1 count=200 2> /dev/null | tr -c -d 'A-Za-z0-9' | sed -n 's/\(.\{24\}\).*/\1/p')
+sudo yunohost app setting agendav encryptkey -v $encryptkey
 sed -i "s/YNH_ENCRYPT_KEY/$encryptkey/g" ../conf/config.php
 sed -i "s@YNH_COOKIE_PREFIX@${path#/}@g" ../conf/config.php
 sed -i "s/YNH_COOKIE_DOMAIN/$domain/g" ../conf/config.php

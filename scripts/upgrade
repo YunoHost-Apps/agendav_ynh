@@ -1,3 +1,64 @@
 #!/bin/bash
 
-# TODO
+domain=$(sudo yunohost app setting agendav domain)
+path=$(sudo yunohost app setting agendav path)
+path=${path%/}
+db_user=agendav
+db_pwd=$(sudo yunohost app setting agendav mysqlpwd)
+db_name=agendav
+encryptkey=$(sudo yunohost app setting agendav encryptkey)
+
+# Clean up existing files and copy new files to the right place
+final_path=/var/www/agendav
+sudo rm -rf $final_path
+sudo mkdir -p $final_path
+sudo cp -r ../sources/* $final_path
+
+sudo chown -R admin: $final_path
+currentpath=$(pwd)
+cd $final_path/web/application && ln -s ../config config && cd $currentpath
+
+# caldav config
+radicale_path=$(sudo yunohost app setting radicale path)
+radicale_path=${radicale_path%/}
+sed -i "s@YNH_DOMAIN@$domain@g" ../conf/caldav.php
+sed -i "s@YNH_RADICALE_PATH@$radicale_path@g" ../conf/caldav.php
+
+# database config
+sed -i "s/YNH_DB_USER/$db_user/g" ../conf/database.php
+sed -i "s/YNH_DB_PWD/$db_pwd/g" ../conf/database.php
+sed -i "s/YNH_DB_NAME/$db_user/g" ../conf/database.php
+
+# main config
+sed -i "s@YNH_DOMAIN@$domain@g" ../conf/config.php
+sed -i "s@YNH_WWW_PATH@$path@g" ../conf/config.php
+logdir=/var/log/agendav
+sudo mkdir -p $logdir
+sudo chown www-data: $logdir
+sudo chmod 755 $logdir
+sed -i "s@YNH_LOG_PATH@$logdir@g" ../conf/config.php
+sed -i "s/YNH_ENCRYPT_KEY/$encryptkey/g" ../conf/config.php
+sed -i "s@YNH_COOKIE_PREFIX@${path#/}@g" ../conf/config.php
+sed -i "s/YNH_COOKIE_DOMAIN/$domain/g" ../conf/config.php
+logout_redirect="https://$domain/ynhsso"
+sed -i "s@YNH_LOGOUT_REDIRECT_TO@$logout_redirect@g" ../conf/config.php
+
+# copy config files
+sudo cp ../conf/{config.php,database.php,caldav.php} $final_path/web/config/
+
+# execute database shema update
+sudo /var/www/agendav/bin/agendavcli dbupdate
+
+# Set permissions to agendav directory
+sudo chown -R root: $final_path
+sudo find $final_path -type f | xargs sudo chmod 644
+sudo find $final_path -type d | xargs sudo chmod 755
+
+# Modify Nginx configuration file and copy it to Nginx conf directory
+sed -i "s@YNH_WWW_PATH@$path@g" ../conf/nginx.conf
+sed -i "s@YNH_ALIAS@$final_path/web/public@g" ../conf/nginx.conf
+sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/agendav.conf
+
+# Reload Nginx and regenerate SSOwat conf
+sudo service nginx reload
+sudo yunohost app ssowatconf
