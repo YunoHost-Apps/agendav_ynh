@@ -1,0 +1,11 @@
+#!/bin/bash
+
+db_user=agendav
+db_name=agendav
+root_pwd=$(sudo cat /etc/yunohost/mysql)
+domain=$(sudo yunohost app setting agendav domain)
+
+mysql -u root -p$root_pwd -e "DROP DATABASE $db_name ; DROP USER $db_user@localhost ;"
+sudo rm -rf /var/www/agendav
+sudo rm -rf /var/log/agendav
+sudo rm -f /etc/nginx/conf.d/$domain.d/agendav.conf
