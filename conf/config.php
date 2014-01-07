@@ -166,7 +166,7 @@ $config['show_public_caldav_url'] = FALSE;
 | than en.
 |
 */
-$config['default_language']	= 'en';
+$config['default_language']	= 'YNH_LANG';
 
 /*
 |--------------------------------------------------------------------------
