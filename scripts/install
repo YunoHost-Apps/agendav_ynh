@@ -30,6 +30,9 @@ final_path=/var/www/agendav
 sudo mkdir -p $final_path
 sudo cp -r ../sources/* $final_path
 
+currentpath=$(pwd)
+cd $final_path/web/application && ln -s ../config config && cd $currentpath
+
 # caldav config
 radicale_path=$(sudo yunohost app setting radicale path)
 radicale_path=${radicale_path%/}
