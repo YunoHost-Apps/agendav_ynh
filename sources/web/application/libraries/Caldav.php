@@ -500,6 +500,23 @@ class Caldav {
      */
     function setacl( $user, $passwd, $calendar = '',
                         $share_with = array()) {
+
+        /**
+         * Modification for Yunohost
+         *
+         * Radicale does not support ACL as Agendav implements it,
+         * and this triggers an error 502.
+         *
+         * But Radicale is set up without ACL (because of the LDAP plugin),
+         * so actually all users have read-write access to all other users
+         * collections.
+         * This is sufficient for us to enable the sharing of calendars in
+         * AgenDAV. We simply skip the ACL request. Sharing status is
+         * stored by AgenDAV in its db.
+         *
+         */
+        return TRUE;
+
         $this->prepare_client($user, $passwd, '');
 
         // Preconditions

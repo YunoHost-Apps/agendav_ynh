@@ -84,7 +84,7 @@ $config['public_caldav_url'] = '';
  * support WebDAV ACLs disable sharing
  */
 
-$config['enable_calendar_sharing'] = FALSE;
+$config['enable_calendar_sharing'] = TRUE;
 
 // Default permissions for calendar owner
 $config['owner_permissions'] = array('all', 'read', 'unlock', 'read-acl',
