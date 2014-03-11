@@ -79,7 +79,10 @@ sudo find $final_path -type d | xargs sudo chmod 755
 # Modify Nginx configuration file and copy it to Nginx conf directory
 sed -i "s@YNH_WWW_PATH@$path@g" ../conf/nginx.conf
 sed -i "s@YNH_ALIAS@$final_path/web/public@g" ../conf/nginx.conf
-sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/agendav.conf
+nginxconf=/etc/nginx/conf.d/$domain.d/agendav.conf
+sudo cp ../conf/nginx.conf $nginxconf
+sudo chown root: $nginxconf
+sudo chmod 600 $nginxconf
 
 # Reload Nginx and regenerate SSOwat conf
 sudo service nginx reload
