@@ -7,11 +7,13 @@ path=$2
 # Check domain/path availability
 sudo yunohost app checkurl $domain$path -a agendav
 if [[ ! $? -eq 0 ]]; then
+    echo "Error : $domain$path is not available"
     exit 1
 fi
 
 sudo yunohost app list | python ../conf/list_installed_apps.py | grep radicale
 if [[ ! $? -eq 0 ]]; then
+    echo "Error : Radicale app is not installed"
     exit 1
 fi
 
