@@ -11,7 +11,7 @@ if [[ ! $? -eq 0 ]]; then
     exit 1
 fi
 
-sudo yunohost app list | python ../conf/list_installed_apps.py | grep radicale
+sudo yunohost app list --json | grep -q '"id": "radicale"'
 if [[ ! $? -eq 0 ]]; then
     echo "Error : Radicale app is not installed"
     exit 1
