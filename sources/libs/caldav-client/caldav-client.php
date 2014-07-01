@@ -875,7 +875,7 @@ EOXML;
    *               be an array with 'href', 'etag' and 'data' elements, corresponding to the URL, the server-supplied
    *               etag (which only varies when the data changes) and the calendar data in iCalendar format.
    */
-  function DoCalendarQuery( $filter, $url = null ) {
+  function DoCalendarQuery( $filter, $expand_filter, $url = null ) {
 
       if ( isset($url) ) $this->SetCalendar($url);
 
@@ -883,7 +883,9 @@ EOXML;
 <?xml version="1.0" encoding="utf-8" ?>
 <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
 <D:prop>
-<C:calendar-data/>
+<C:calendar-data>
+$expand_filter
+</C:calendar-data>
 <D:getetag/>
 </D:prop>$filter
 </C:calendar-query>
@@ -936,9 +938,15 @@ EOXML;
       $this->SetDepth('1');
       $filter = "";
       if ( isset($start) && isset($finish) )
+      {
           $range = "<C:time-range start=\"$start\" end=\"$finish\"/>";
+          $expand_filter = "<C:expand  start=\"$start\"   end=\"$finish\" />";
+      }
       else
+      {
           $range = '';
+          $expand_filter = "";
+      }
 
       $filter = <<<EOFILTER
 <C:filter>
@@ -950,7 +958,8 @@ $range
 </C:filter>
 EOFILTER;
 
-      return $this->DoCalendarQuery($filter, $relative_url);
+
+      return $this->DoCalendarQuery($filter, $expand_filter, $relative_url);
   }
 
 
@@ -975,6 +984,7 @@ EOFILTER;
           $time_range = <<<EOTIME
 <C:time-range start="$start" end="$finish"/>
 EOTIME;
+          $expand_filter = "<C:expand  start=\"$start\"   end=\"$finish\" />";
       }
 
       // Warning!  May contain traces of double negatives...
@@ -996,7 +1006,7 @@ EOTIME;
 </C:filter>
 EOFILTER;
 
-      return $this->DoCalendarQuery($filter, $relative_url);
+      return $this->DoCalendarQuery($filter, $expand_filter, $relative_url);
   }
 
 
@@ -1025,7 +1035,7 @@ EOFILTER;
 EOFILTER;
       }
 
-      return $this->DoCalendarQuery($filter, $relative_url);
+      return $this->DoCalendarQuery($filter, $expand_filter, $relative_url);
   }
 
 
