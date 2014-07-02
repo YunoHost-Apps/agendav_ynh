@@ -1,5 +1,20 @@
 #!/bin/bash
 
+baikal=0
+radicale=0
+if [[ $(sudo yunohost app list --json | grep -q '"id": "baikal"') -eq 0 ]]; then
+    echo "Detected Baikal"
+    baikal=1
+    caldavapp=baikal
+elif [[ $(sudo yunohost app list --json | grep -q '"id": "radicale"')? -eq 0 ]]; then
+    echo "Detected Radicale"
+    radicale=1
+    caldavapp=radicale
+else
+  echo "Error : You must install Baikal or Radicale before"
+  exit 1
+fi
+
 domain=$(sudo yunohost app setting agendav domain)
 path=$(sudo yunohost app setting agendav path)
 path=${path%/}
@@ -23,7 +38,20 @@ currentpath=$(pwd)
 cd $final_path/web/application && ln -s ../config config && cd $currentpath
 
 # caldav config
-radicale_path=$(sudo yunohost app setting radicale path)
+caldavdomain=$(sudo yunohost app setting $caldavapp domain)
+caldavpath=$(sudo yunohost app setting $caldavapp path)
+caldavpath=${caldavpath%/}
+if [ $baikal -eq 1 ]; then
+  caldav_principal_url="https://$caldavdomain$caldavpath/cal.php/%u/"
+  caldav_calendar_url="https://$caldavdomain$caldavpath/cal.php/calendars/%s/"
+elif [ $radicale -eq 1 ]; then
+  caldav_principal_url="https://$caldavdomain$caldavpath/%u/"
+  caldav_calendar_url="https://$caldavdomain$caldavpath/%s/"
+fi
+echo "----- $caldav_principal_url"
+sed -i "s@YNH_CALDAV_PRINCIPAL_URL@$caldav_principal_url@g" ../conf/caldav.php
+sed -i "s@YNH_CALDAV_CALENDAR_URL@$caldav_calendar_url@g" ../conf/caldav.php
+
 radicale_path=${radicale_path%/}
 sed -i "s@YNH_DOMAIN@$domain@g" ../conf/caldav.php
 sed -i "s@YNH_RADICALE_PATH@$radicale_path@g" ../conf/caldav.php
