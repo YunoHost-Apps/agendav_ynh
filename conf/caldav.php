@@ -44,7 +44,7 @@ $config['caldav_http_auth_method'] = CURLAUTH_BASIC;
  * - Apple Calendar Server: https://host/calendars/users/%u/
  */
 
-$config['caldav_principal_url'] = 'https://YNH_DOMAINYNH_RADICALE_PATH/%u/';
+$config['caldav_principal_url'] = 'YNH_CALDAV_PRINCIPAL_URL';
 
 /*
  * CalDAV calendars URL template
@@ -59,7 +59,7 @@ $config['caldav_principal_url'] = 'https://YNH_DOMAINYNH_RADICALE_PATH/%u/';
  * - Apple Calendar Server: https://host/calendars/users/%s/
  */
 
-$config['caldav_calendar_url'] = 'https://YNH_DOMAINYNH_RADICALE_PATH/%s/';
+$config['caldav_calendar_url'] = 'YNH_CALDAV_CALENDAR_URL';
 
 /*
  * Public CalDAV URL for calendars
