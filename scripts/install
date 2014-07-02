@@ -58,11 +58,11 @@ cd $final_path/web/application && ln -s ../config config && cd $currentpath
 caldavdomain=$(sudo yunohost app setting $caldavapp domain)
 caldavpath=$(sudo yunohost app setting $caldavapp path)
 if [ $baikal -eq 1 ]; then
-  caldav_principal_url="https://$(caldavdomain)$(caldavpath)/cal.php/%u/"
-  caldav_calendar_url="https://$(caldavdomain)$(caldavpath)/cal.php/calendars/%s/"
+  caldav_principal_url="https://$caldavdomain$caldavpath/cal.php/%u/"
+  caldav_calendar_url="https://$caldavdomain$caldavpath/cal.php/calendars/%s/"
 elif [ $radicale -eq 1 ]; then
-  caldav_principal_url="https://$(caldavdomain)$(caldavpath)/%u/"
-  caldav_calendar_url="https://$(caldavdomain)$(caldavpath)/%s/"
+  caldav_principal_url="https://$caldavdomain$caldavpath/%u/"
+  caldav_calendar_url="https://$caldavdomain$caldavpath/%s/"
 fi
 sed -i "s@YNH_CALDAV_PRINCIPAL_URL@$caldav_principal_url@g" ../conf/caldav.php
 sed -i "s@YNH_CALDAV_CALENDAR_URL@$caldav_calendar_url@g" ../conf/caldav.php
