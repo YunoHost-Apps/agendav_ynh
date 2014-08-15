@@ -13,11 +13,15 @@ fi
 
 baikal=0
 radicale=0
-if [[ $(sudo yunohost app list --json | grep -q '"id": "baikal"') -eq 0 ]]; then
+
+sudo yunohost app list -f baikal --json | grep '"installed": true'  && baikal=1
+sudo yunohost app list -f radicale --json | grep '"installed": true'  && radicale=1
+
+if [ "$baikal" == "1" ] ; then
     echo "Detected Baikal"
     baikal=1
     caldavapp=baikal
-elif [[ $(sudo yunohost app list --json | grep -q '"id": "radicale"')? -eq 0 ]]; then
+elif [ "$radicale" == "1" ] ; then
     echo "Detected Radicale"
     radicale=1
     caldavapp=radicale
