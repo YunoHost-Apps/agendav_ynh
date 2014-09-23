@@ -5,6 +5,7 @@
         "en": "CalDAV web client",
         "fr": "Client web pour CalDAV"
     },
+    "licence": "GPL-3",
     "developer": {
         "name": "julien",
         "email": "julien.malik@paraiso.me",
