@@ -1,6 +1,7 @@
 {
     "name": "AgenDAV",
     "id": "agendav",
+    "packaging_format": 1,
     "description": {
         "en": "CalDAV web client",
         "fr": "Client web pour CalDAV"
