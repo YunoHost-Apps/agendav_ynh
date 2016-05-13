@@ -1,12 +1,14 @@
 {
-    "name": "AgenDAV",
-    "id": "agendav",
     "packaging_format": 1,
+    "id": "agendav",
+    "name": "AgenDAV",
     "description": {
         "en": "CalDAV web client",
         "fr": "Client web pour CalDAV"
     },
     "url": "http://agendav.org/",
+    "license": "GPL-3",
+    "version": "1.2.6.2",
     "maintainer": {
         "name": "julien",
         "email": "julien.malik@paraiso.me"
@@ -21,7 +23,7 @@
         "install" : [
             {
                 "name": "domain",
-                "type": "domain", 
+                "type": "domain",
                 "ask": {
                     "en": "Choose a domain for AgenDAV",
                     "fr": "Choisissez un domaine pour AgenDAV"
