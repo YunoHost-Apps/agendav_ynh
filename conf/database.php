@@ -42,9 +42,9 @@ $active_group = 'default';
 $active_record = TRUE;
 
 $db['default']['hostname'] = 'localhost';
-$db['default']['username'] = 'YNH_DB_USER';
-$db['default']['password'] = 'YNH_DB_PWD';
-$db['default']['database'] = 'YNH_DB_NAME';
+$db['default']['username'] = '{DBUSER}';
+$db['default']['password'] = '{DBPASS}';
+$db['default']['database'] = '{DBNAME}';
 $db['default']['dbdriver'] = 'mysql';
 $db['default']['dbprefix'] = '';
 $db['default']['pconnect'] = TRUE;

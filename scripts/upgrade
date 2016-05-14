@@ -1,103 +1,91 @@
 #!/bin/bash
 
-baikal=0
-radicale=0
-if [[ $(sudo yunohost app list --json | grep -q '"id": "baikal"') -eq 0 ]]; then
-    echo "Detected Baikal"
-    baikal=1
-    caldavapp=baikal
-elif [[ $(sudo yunohost app list --json | grep -q '"id": "radicale"')? -eq 0 ]]; then
-    echo "Detected Radicale"
-    radicale=1
-    caldavapp=radicale
-else
-  echo "Error : You must install Baikal or Radicale before"
-  exit 1
-fi
+set -e
 
-domain=$(sudo yunohost app setting agendav domain)
-path=$(sudo yunohost app setting agendav path)
+# Source app helpers
+. /usr/share/yunohost/helpers
+
+# Set app specific variables
+app="agendav"
+dbname=$app
+dbuser=$app
+
+# Retrieve arguments
+domain=$(ynh_app_setting_get "$app" domain)
+path=$(ynh_app_setting_get "$app" path)
 path=${path%/}
-db_user=agendav
-db_pwd=$(sudo yunohost app setting agendav mysqlpwd)
-db_name=agendav
-encryptkey=$(sudo yunohost app setting agendav encryptkey)
+dbpass=$(ynh_app_setting_get "$app" mysqlpwd)
+encryptkey=$(ynh_app_setting_get "$app" encryptkey)
+
+# Check destination directory
+DESTDIR="/var/www/$app"
+[[ ! -d $DESTDIR ]] && ynh_die \
+"The destination directory '$DESTDIR' does not exist.\
+ The app is not correctly installed, you should remove it first."
+
+# Check whether Baïkal or Radicale is installed
+if sudo yunohost app list --installed -f baikal | grep -q id ; then
+    caldav_app="baikal"
+    caldav_principal_path="/cal.php/%u/"
+    caldav_calendar_path="/cal.php/calendars/%s/"
+elif sudo yunohost app list --installed -f radicale | grep -q id ; then
+    caldav_app="radicale"
+    caldav_principal_path="/%u/"
+    caldav_calendar_path="/%s/"
+else
+    ynh_die "You must install Baïkal or Radicale before"
+fi
 
 # Install dependencies
-sudo apt-get update
-sudo apt-get install php5-cli -y
+ynh_package_is_installed "php5-cli" \
+  || ynh_package_install "php5-cli"
 
 # Clean up existing files and copy new files to the right place
-final_path=/var/www/agendav
-sudo rm -rf $final_path
-sudo mkdir -p $final_path
-sudo cp -r ../sources/* $final_path
+sudo rm -rf "$DESTDIR"
+sudo cp -r ../sources "$DESTDIR"
 
-sudo chown -R admin: $final_path
-currentpath=$(pwd)
-cd $final_path/web/application && ln -s ../config config && cd $currentpath
+# CalDAV config
+caldav_domain=$(ynh_app_setting_get "$caldav_app" domain)
+caldav_path=$(ynh_app_setting_get "$caldav_app" path)
+caldav_url="https://${caldav_domain}${caldav_path%/}"
+sed -i "s@{PRINCIPAL_URL}@${caldav_url}${caldav_principal_path}@g" \
+    ../conf/caldav.php
+sed -i "s@{CALENDAR_URL}@${caldav_url}${caldav_calendar_path}@g" \
+    ../conf/caldav.php
 
-# caldav config
-caldavdomain=$(sudo yunohost app setting $caldavapp domain)
-caldavpath=$(sudo yunohost app setting $caldavapp path)
-caldavpath=${caldavpath%/}
-if [ $baikal -eq 1 ]; then
-  caldav_principal_url="https://$caldavdomain$caldavpath/cal.php/%u/"
-  caldav_calendar_url="https://$caldavdomain$caldavpath/cal.php/calendars/%s/"
-elif [ $radicale -eq 1 ]; then
-  caldav_principal_url="https://$caldavdomain$caldavpath/%u/"
-  caldav_calendar_url="https://$caldavdomain$caldavpath/%s/"
-fi
-echo "----- $caldav_principal_url"
-sed -i "s@YNH_CALDAV_PRINCIPAL_URL@$caldav_principal_url@g" ../conf/caldav.php
-sed -i "s@YNH_CALDAV_CALENDAR_URL@$caldav_calendar_url@g" ../conf/caldav.php
+# Database config
+sed -i "s/{DBUSER}/${dbuser}/g" ../conf/database.php
+sed -i "s/{DBPASS}/${dbpass}/g" ../conf/database.php
+sed -i "s/{DBNAME}/${dbname}/g" ../conf/database.php
 
-radicale_path=${radicale_path%/}
-sed -i "s@YNH_DOMAIN@$domain@g" ../conf/caldav.php
-sed -i "s@YNH_RADICALE_PATH@$radicale_path@g" ../conf/caldav.php
+# Main config
+LOGDIR=/var/log/agendav
+lang=${LANG/.*/}
+sed -i "s@{DOMAIN}@${domain}@g" ../conf/config.php
+sed -i "s@{PATH}@${path}@g" ../conf/config.php
+sed -i "s@{LOGDIR}@${LOGDIR}@g" ../conf/config.php
+sed -i "s/{ENCRYPTKEY}/${encryptkey}/g" ../conf/config.php
+sed -i "s@{COOKIE_PREFIX}@${path#/}@g" ../conf/config.php
+sed -i "s@{COOKIE_DOMAIN}@${domain}@g" ../conf/config.php
+sed -i "s@{LANG}@${lang:-en_EN}@g" ../conf/config.php
+sed -i "s@{TIMEZONE}@$(cat /etc/timezone)@g" ../conf/config.php
 
-# database config
-sed -i "s/YNH_DB_USER/$db_user/g" ../conf/database.php
-sed -i "s/YNH_DB_PWD/$db_pwd/g" ../conf/database.php
-sed -i "s/YNH_DB_NAME/$db_user/g" ../conf/database.php
+# Copy config files and set permissions
+sudo cp ../conf/{config,database,caldav}.php "${DESTDIR}/web/config/"
+(cd "$DESTDIR/web/application" && sudo ln -s ../config config)
+sudo chown -hR root: "$DESTDIR"
 
-# main config
-sed -i "s@YNH_DOMAIN@$domain@g" ../conf/config.php
-sed -i "s@YNH_WWW_PATH@$path@g" ../conf/config.php
-logdir=/var/log/agendav
-sudo mkdir -p $logdir
-sudo chown www-data: $logdir
-sudo chmod 755 $logdir
-sed -i "s@YNH_LOG_PATH@$logdir@g" ../conf/config.php
-sed -i "s/YNH_ENCRYPT_KEY/$encryptkey/g" ../conf/config.php
-sed -i "s@YNH_COOKIE_PREFIX@${path#/}@g" ../conf/config.php
-sed -i "s/YNH_COOKIE_DOMAIN/$domain/g" ../conf/config.php
-logout_redirect="https://$domain/yunohost/sso"
-sed -i "s@YNH_LOGOUT_REDIRECT_TO@$logout_redirect@g" ../conf/config.php
-lang=$(sudo bash -c "echo $LANG | cut -d '.' -f 1")
-sed -i "s@YNH_LANG@$lang@g" ../conf/config.php
-timezone=$(cat /etc/timezone)
-sed -i "s@YNH_TIMEZONE@$timezone@g" ../conf/config.php
+# Create log directory
+sudo install -m 750 -o www-data -d "$LOGDIR"
 
-# copy config files
-sudo cp ../conf/{config.php,database.php,caldav.php} $final_path/web/config/
-
-# execute database shema update
+# Execute database shema update
 sudo /var/www/agendav/bin/agendavcli dbupdate
 
-# Set permissions to agendav directory
-sudo chown -R root: $final_path
-sudo find $final_path -type f | xargs sudo chmod 644
-sudo find $final_path -type d | xargs sudo chmod 755
+# Copy and set nginx configuration
+nginx_conf="/etc/nginx/conf.d/${domain}.d/${app}.conf"
+sed -i "s@{LOCATION}@${path:-/}@g" ../conf/nginx.conf
+sed -i "s@{DESTDIR}@${DESTDIR}@g"  ../conf/nginx.conf
+sudo cp ../conf/nginx.conf "$nginx_conf"
 
-# Modify Nginx configuration file and copy it to Nginx conf directory
-sed -i "s@YNH_WWW_PATH@$path@g" ../conf/nginx.conf
-sed -i "s@YNH_ALIAS@$final_path/web/public@g" ../conf/nginx.conf
-nginxconf=/etc/nginx/conf.d/$domain.d/agendav.conf
-sudo cp ../conf/nginx.conf $nginxconf
-sudo chown root: $nginxconf
-sudo chmod 600 $nginxconf
-
-# Reload Nginx and regenerate SSOwat conf
-sudo service nginx reload
-sudo yunohost app ssowatconf
+# Reload services
+sudo service nginx reload || true

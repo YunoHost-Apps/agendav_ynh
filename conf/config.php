@@ -20,7 +20,7 @@ require_once('defaults.php');
 | path to your installation.
 |
 */
-$config['base_url']	= 'https://YNH_DOMAINYNH_WWW_PATH/';
+$config['base_url']	= 'https://{DOMAIN}{PATH}/';
 
 
 /*
@@ -50,7 +50,7 @@ $config['show_in_log']= array('ERROR','INFO','AUTHERR', 'AUTHOK');
 | Use a full server path with trailing slash.
 |
 */
-$config['log_path'] = 'YNH_LOG_PATH/';
+$config['log_path'] = '{LOGDIR}/';
 
 /*
 |--------------------------------------------------------------------------
@@ -61,7 +61,7 @@ $config['log_path'] = 'YNH_LOG_PATH/';
 | MUST set an encryption key.  See the user guide for info.
 |
 */
-$config['encryption_key'] = 'YNH_ENCRYPT_KEY';
+$config['encryption_key'] = '{ENCRYPTKEY}';
 
 
 /*
@@ -75,8 +75,8 @@ $config['encryption_key'] = 'YNH_ENCRYPT_KEY';
 | 'cookie_secure' =  Cookies will only be set if a secure HTTPS connection exists.
 |
 */
-$config['cookie_prefix']	= "YNH_COOKIE_PREFIX";
-$config['cookie_domain']	= "YNH_COOKIE_DOMAIN";
+$config['cookie_prefix']	= "{COOKIE_PREFIX}";
+$config['cookie_domain']	= "{COOKIE_DOMAIN}";
 $config['cookie_path']		= "/";
 $config['cookie_secure']	= TRUE;
 
@@ -131,7 +131,8 @@ $config['footer'] = 'Powered by Yunohost';
 | Leave empty if you want to redirect to login page
 |
 */
-$config['logout_redirect_to'] = 'YNH_LOGOUT_REDIRECT_TO';
+$main_domain = exec('cat /etc/yunohost/current_host');
+$config['logout_redirect_to'] = 'https://'.$main_domain.'/yunohost/sso/?action=logout';
 
 /*
 |--------------------------------------------------------------------------
@@ -166,7 +167,7 @@ $config['show_public_caldav_url'] = FALSE;
 | than en.
 |
 */
-$config['default_language']	= 'YNH_LANG';
+$config['default_language']	= '{LANG}';
 
 /*
 |--------------------------------------------------------------------------
@@ -258,7 +259,7 @@ $config['default_first_day'] = 1;
 | Please, use a valid timezone from http://php.net/timezones
 */
 
-$config['default_timezone'] = 'YNH_TIMEZONE';
+$config['default_timezone'] = '{TIMEZONE}';
 
 /*
 |--------------------------------------------------------------------------
