@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# Set app specific variables
+app="agendav"
+dbname=$app
+dbuser=$app
+
+# Source app helpers
+. /usr/share/yunohost/helpers
+
+# Retrieve old app settings
+domain=$(ynh_app_setting_get "$app" domain)
+path=$(ynh_app_setting_get "$app" path)
+dbpass=$(ynh_app_setting_get "$app" mysqlpwd)
+
+# Check domain/path availability
+sudo yunohost app checkurl "${domain}${path}" -a "$app" \
+  || exit 1
+
+# Check destination directory
+DESTDIR="/var/www/$app"
+[[ -d $DESTDIR ]] && ynh_die \
+"The destination directory '$DESTDIR' already exists.\
+ You should safely delete it before restoring this app."
+
+# Check configuration files
+nginx_conf="/etc/nginx/conf.d/${domain}.d/${app}.conf"
+[[ -f $nginx_conf ]] && ynh_die \
+"The NGINX configuration already exists at '${nginx_conf}'.
+ You should safely delete it before restoring this app."
+
+# Check whether Baïkal or Radicale is installed
+if sudo yunohost app list --installed -f baikal | grep -q id ; then
+    caldav_app="baikal"
+    caldav_principal_path="/cal.php/%u/"
+    caldav_calendar_path="/cal.php/calendars/%s/"
+elif sudo yunohost app list --installed -f radicale | grep -q id ; then
+    caldav_app="radicale"
+    caldav_principal_path="/%u/"
+    caldav_calendar_path="/%s/"
+else
+    ynh_die "You must install Baïkal or Radicale before"
+fi
+
+# Restore the app files and set permissions
+sudo cp -a ./sources "$DESTDIR"
+sudo chown -R www-data: "$DESTDIR"
+
+# CalDAV config
+caldav_domain=$(ynh_app_setting_get "$caldav_app" domain)
+caldav_path=$(ynh_app_setting_get "$caldav_app" path)
+caldav_url="https://${caldav_domain}${caldav_path%/}"
+caldav_conf="${DESTDIR}/web/application/config/caldav.php"
+sudo sed -i "s@^\(\$config\['caldav_principal_url'\] = \).*\
+@\1'${caldav_url}${caldav_principal_path}';@g" "$caldav_conf"
+sudo sed -i "s@^\(\$config\['caldav_calendar_url'\] = \).*\
+@\1'${caldav_url}${caldav_calendar_path}';@g" "$caldav_conf"
+
+# Create log directory
+sudo install -m 750 -o www-data -d "/var/log/${app}"
+
+# Create and restore the database
+ynh_mysql_create_db "$dbname" "$dbuser" "$dbpass"
+ynh_mysql_connect_as "$dbuser" "$dbpass" "$dbname" < ./dump.sql
+
+# Restore configuration files
+sudo cp -a ./nginx.conf   "$nginx_conf"
+
+# Reload services
+sudo service nginx reload || true
