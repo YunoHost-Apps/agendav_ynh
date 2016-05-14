@@ -13,7 +13,10 @@
         "name": "julien",
         "email": "julien.malik@paraiso.me"
     },
-    "multi_instance": "false",
+    "multi_instance": false,
+    "requirements": {
+        "yunohost": ">= 2.4.0"
+    },
     "services": [
         "nginx",
         "php5-fpm",
