@@ -12,11 +12,11 @@ AJAX interface to allow users to manage their own calendars and shared ones.
 
 ## TODO
 
- * Update the `upgrade`, `backup` and `restore` scripts
+ * Update the `backup` and `restore` scripts
  * Test the upgrade from the 1.x to the 2.x
 
 ## Links
 
  * Report a bug: https://dev.yunohost.org/projects/apps/issues
- * Nextcloud website: http://agendav.org/
+ * AgenDAV website: http://agendav.org/
  * YunoHost website: https://yunohost.org/
