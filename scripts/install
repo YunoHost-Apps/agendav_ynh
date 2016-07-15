@@ -1,13 +1,14 @@
 #!/bin/bash
 
-set -e
+set -eu
 
 # Retrieve arguments
 domain=$1
 path=${2%/}
+language=$3
 
-# Source app helpers
-. /usr/share/yunohost/helpers
+# Source common variables and helpers
+source ./_common.sh
 
 # Set app specific variables
 app="agendav"
@@ -18,6 +19,10 @@ dbuser=$app
 sudo yunohost app checkurl "${domain}${path}" -a "$app" \
   || exit 1
 
+# Set and store language
+language=${LANGUAGES[$3]}
+ynh_app_setting_set "$app" language "$language"
+
 # Check destination directory
 DESTDIR="/var/www/${app}"
 [[ -d "$DESTDIR" ]] && ynh_die \
@@ -27,12 +32,10 @@ DESTDIR="/var/www/${app}"
 # Check whether Baïkal or Radicale is installed
 if sudo yunohost app list --installed -f baikal | grep -q id ; then
     caldav_app="baikal"
-    caldav_principal_path="/cal.php/%u/"
-    caldav_calendar_path="/cal.php/calendars/%s/"
+    caldav_baseurl="/cal.php/"
 elif sudo yunohost app list --installed -f radicale | grep -q id ; then
     caldav_app="radicale"
-    caldav_principal_path="/%u/"
-    caldav_calendar_path="/%s/"
+    caldav_baseurl="/"
 else
     ynh_die "You must install Baïkal or Radicale before"
 fi
@@ -41,64 +44,65 @@ fi
 ynh_package_is_installed "php5-cli" \
   || ynh_package_install "php5-cli"
 
+# Create tmp directory and fetch app inside
+TMPDIR=$(ynh_mkdir_tmp)
+extract_agendav "$TMPDIR"
+
 # Generate random password and encryption key
 dbpass=$(ynh_string_random)
 encryptkey=$(ynh_string_random 24)
+ynh_app_setting_set "$app" encryptkey "$encryptkey"
+ynh_app_setting_set "$app" mysqlpwd "$dbpass"
 
-# Initialize database
-ynh_mysql_create_db "$dbname" "$dbuser" "$dbpass"
-ynh_mysql_connect_as "$dbuser" "$dbpass" "$dbname" \
-    < "../sources/sql/mysql.schema.sql"
+# Create log directory
+LOGDIR=/var/log/agendav
+sudo install -m 750 -o www-data -d "$LOGDIR"
 
-# Copy files to the right place
-sudo cp -r ../sources "$DESTDIR"
+# Copy and set AgenDAV configuration
+conf_path="${TMPDIR}/web/config/settings.php"
+cp ../conf/settings.php "$conf_path"
+sed -i "s/{DBUSER}/${dbuser}/g"              "$conf_path"
+sed -i "s/{DBPASS}/${dbpass}/g"              "$conf_path"
+sed -i "s/{DBNAME}/${dbname}/g"              "$conf_path"
+sed -i "s/{ENCRYPTKEY}/${encryptkey}/g"      "$conf_path"
+sed -i "s@{LOGDIR}@${LOGDIR}@g"              "$conf_path"
+sed -i "s@{TIMEZONE}@$(cat /etc/timezone)@g" "$conf_path"
+sed -i "s@{LANGUAGE}@${language}@g"          "$conf_path"
 
 # CalDAV config
 caldav_domain=$(ynh_app_setting_get "$caldav_app" domain)
 caldav_path=$(ynh_app_setting_get "$caldav_app" path)
 caldav_url="https://${caldav_domain}${caldav_path%/}"
-sed -i "s@{PRINCIPAL_URL}@${caldav_url}${caldav_principal_path}@g" \
-    ../conf/caldav.php
-sed -i "s@{CALENDAR_URL}@${caldav_url}${caldav_calendar_path}@g" \
-    ../conf/caldav.php
+sed -i "s@{CALDAV_BASEURL}@${caldav_url}${caldav_baseurl}@g" "$conf_path"
+sed -i "s@{CALDAV_DOMAIN}@${caldav_domain}@g"                "$conf_path"
 
-# Database config
-sed -i "s/{DBUSER}/${dbuser}/g" ../conf/database.php
-sed -i "s/{DBPASS}/${dbpass}/g" ../conf/database.php
-sed -i "s/{DBNAME}/${dbname}/g" ../conf/database.php
-
-# Main config
-LOGDIR=/var/log/agendav
-lang=${LANG/.*/}
-sed -i "s@{DOMAIN}@${domain}@g" ../conf/config.php
-sed -i "s@{PATH}@${path}@g" ../conf/config.php
-sed -i "s@{LOGDIR}@${LOGDIR}@g" ../conf/config.php
-sed -i "s/{ENCRYPTKEY}/${encryptkey}/g" ../conf/config.php
-sed -i "s@{COOKIE_PREFIX}@${path#/}@g" ../conf/config.php
-sed -i "s@{COOKIE_DOMAIN}@${domain}@g" ../conf/config.php
-sed -i "s@{LANG}@${lang:-en_EN}@g" ../conf/config.php
-sed -i "s@{TIMEZONE}@$(cat /etc/timezone)@g" ../conf/config.php
-
-# Copy config files and set permissions
-sudo cp ../conf/{config,database,caldav}.php "${DESTDIR}/web/config/"
-(cd "$DESTDIR/web/application" && sudo ln -s ../config config)
+# Install files and set permissions
+sudo mv "$TMPDIR" "$DESTDIR"
 sudo chown -hR root: "$DESTDIR"
+sudo chown -hR www-data: "${DESTDIR}/web"
+sudo chmod -R 750 "${DESTDIR}/web/var"
 
-# Create log directory
-sudo install -m 750 -o www-data -d "$LOGDIR"
-
-# Execute database shema update
-sudo /var/www/agendav/bin/agendavcli dbupdate
-
-# Save app settings
-ynh_app_setting_set "$app" encryptkey "$encryptkey"
-ynh_app_setting_set "$app" mysqlpwd "$dbpass"
+# Initialize database
+ynh_mysql_create_db "$dbname" "$dbuser" "$dbpass"
+(cd "$DESTDIR" && sudo sudo -u www-data \
+    php agendavcli migrations:migrate --no-interaction) \
+  || ynh_die "Unable to create AgenDAV tables"
 
 # Copy and set nginx configuration
 nginx_conf="/etc/nginx/conf.d/${domain}.d/${app}.conf"
+sed -i "s@{PATH}@${path}@g"        ../conf/nginx.conf
 sed -i "s@{LOCATION}@${path:-/}@g" ../conf/nginx.conf
 sed -i "s@{DESTDIR}@${DESTDIR}@g"  ../conf/nginx.conf
+# comment redirection in case of an installation at root
+[[ -n "$path" ]] || sed -i '$s/^/#/' ../conf/nginx.conf
 sudo cp ../conf/nginx.conf "$nginx_conf"
 
+# Copy and set php-fpm configuration
+phpfpm_conf="/etc/php5/fpm/pool.d/${app}.conf"
+sed -i "s@{POOLNAME}@${app}@g"     ../conf/php-fpm.conf
+sed -i "s@{DESTDIR}@${DESTDIR}/@g" ../conf/php-fpm.conf
+sudo cp ../conf/php-fpm.conf "$phpfpm_conf"
+
 # Reload services
+sudo service php5-fpm restart
 sudo service nginx reload
