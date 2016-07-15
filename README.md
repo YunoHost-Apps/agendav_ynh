@@ -12,7 +12,6 @@ AJAX interface to allow users to manage their own calendars and shared ones.
 
 ## TODO
 
- * Update the `backup` and `restore` scripts
  * Test the upgrade from the 1.x to the 2.x
 
 ## Links

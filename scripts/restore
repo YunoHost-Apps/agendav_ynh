@@ -1,12 +1,14 @@
 #!/bin/bash
 
+set -eu
+
 # Set app specific variables
 app="agendav"
 dbname=$app
 dbuser=$app
 
 # Source app helpers
-. /usr/share/yunohost/helpers
+source /usr/share/yunohost/helpers
 
 # Retrieve old app settings
 domain=$(ynh_app_setting_get "$app" domain)
@@ -28,33 +30,40 @@ nginx_conf="/etc/nginx/conf.d/${domain}.d/${app}.conf"
 [[ -f $nginx_conf ]] && ynh_die \
 "The NGINX configuration already exists at '${nginx_conf}'.
  You should safely delete it before restoring this app."
+phpfpm_conf="/etc/php5/fpm/pool.d/${app}.conf"
+[[ -f $phpfpm_conf ]] && ynh_die \
+"The PHP FPM configuration already exists at '${phpfpm_conf}'.
+ You should safely delete it before restoring this app."
 
 # Check whether Baïkal or Radicale is installed
 if sudo yunohost app list --installed -f baikal | grep -q id ; then
     caldav_app="baikal"
-    caldav_principal_path="/cal.php/%u/"
-    caldav_calendar_path="/cal.php/calendars/%s/"
+    caldav_baseurl="/cal.php/"
 elif sudo yunohost app list --installed -f radicale | grep -q id ; then
     caldav_app="radicale"
-    caldav_principal_path="/%u/"
-    caldav_calendar_path="/%s/"
+    caldav_baseurl="/"
 else
     ynh_die "You must install Baïkal or Radicale before"
 fi
 
 # Restore the app files and set permissions
 sudo cp -a ./sources "$DESTDIR"
-sudo chown -R www-data: "$DESTDIR"
+sudo chown -hR root: "$DESTDIR"
+sudo chown -hR www-data: "${DESTDIR}/web"
+sudo chmod -R 750 "${DESTDIR}/web/var"
+
+# Clean caches
+sudo rm -rf "${DESTDIR}/web/var/cache/"{profiler,twig}/*
 
 # CalDAV config
 caldav_domain=$(ynh_app_setting_get "$caldav_app" domain)
 caldav_path=$(ynh_app_setting_get "$caldav_app" path)
 caldav_url="https://${caldav_domain}${caldav_path%/}"
-caldav_conf="${DESTDIR}/web/application/config/caldav.php"
-sudo sed -i "s@^\(\$config\['caldav_principal_url'\] = \).*\
-@\1'${caldav_url}${caldav_principal_path}';@g" "$caldav_conf"
-sudo sed -i "s@^\(\$config\['caldav_calendar_url'\] = \).*\
-@\1'${caldav_url}${caldav_calendar_path}';@g" "$caldav_conf"
+conf_path="${DESTDIR}/web/config/settings.php"
+sudo sed -i "s@^\(\$app\['caldav.baseurl'\] = \).*\
+@\1'${caldav_url}${caldav_baseurl}';@g" "$conf_path"
+sudo sed -i "s@^\(\$app\['caldav.baseurl.public'\] = \).*\
+@\1'${caldav_domain}';@g" "$conf_path"
 
 # Create log directory
 sudo install -m 750 -o www-data -d "/var/log/${app}"
@@ -65,6 +74,8 @@ ynh_mysql_connect_as "$dbuser" "$dbpass" "$dbname" < ./dump.sql
 
 # Restore configuration files
 sudo cp -a ./nginx.conf   "$nginx_conf"
+sudo cp -a ./php-fpm.conf "$phpfpm_conf"
 
 # Reload services
-sudo service nginx reload || true
+sudo service php5-fpm restart
+sudo service nginx reload

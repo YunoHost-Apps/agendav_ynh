@@ -1,12 +1,14 @@
 #!/bin/bash
 
+set -eu
+
 # Set app specific variables
 app="agendav"
 dbname=$app
 dbuser=$app
 
-# Source app helpers
-. /usr/share/yunohost/helpers
+# Source YunoHost helpers
+source /usr/share/yunohost/helpers
 
 # Retrieve app settings
 domain=$(ynh_app_setting_get "$app" domain)
@@ -19,6 +21,7 @@ ynh_backup "$DESTDIR" "sources"
 
 # Copy the conf files
 ynh_backup "/etc/nginx/conf.d/${domain}.d/${app}.conf" "nginx.conf"
+ynh_backup "/etc/php5/fpm/pool.d/${app}.conf" "php-fpm.conf"
 
 # Dump the database
 mysqldump -u "$dbuser" -p"$dbpass" --no-create-db "$dbname" > ./dump.sql
