@@ -1,8 +1,6 @@
 AgenDAV for YunoHost
 --------------------
 
-**This is a work-in-progress AgenDAV package upgrade.**
-
 [AgenDAV](http://agendav.org/) is a CalDAV web client which features an
 AJAX interface to allow users to manage their own calendars and shared ones.
 
