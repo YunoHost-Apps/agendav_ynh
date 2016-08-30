@@ -5,8 +5,8 @@ app="agendav"
 dbname=$app
 dbuser=$app
 
-# Source app helpers
-. /usr/share/yunohost/helpers
+# Source YunoHost helpers
+source /usr/share/yunohost/helpers
 
 # Drop MySQL database and user
 ynh_mysql_drop_db "$dbname" || true
@@ -17,7 +17,9 @@ domain=$(ynh_app_setting_get "$app" domain)
 
 # Delete app directory and configurations
 sudo rm -rf "/var/www/${app}" "/var/log/${app}"
+sudo rm -f "/etc/php5/fpm/pool.d/${app}.conf"
 [[ -n $domain ]] && sudo rm -f "/etc/nginx/conf.d/${domain}.d/${app}.conf"
 
 # Reload services
+sudo service php5-fpm restart || true
 sudo service nginx reload || true

@@ -1,20 +1,21 @@
 AgenDAV for YunoHost
--------------------
+--------------------
+
+**This is a work-in-progress AgenDAV package upgrade.**
 
 [AgenDAV](http://agendav.org/) is a CalDAV web client which features an
 AJAX interface to allow users to manage their own calendars and shared ones.
 
-**Shipped version:** 1.2.6.2
+**Shipped version:** 2.0.0-beta2
 
-## Known issues
+![](http://agendav.org/img/screenshots/2.0.0-beta1/001_month_view.png)
 
- * The calendar events are not retrieved when using the last Baïkal version as
-   backend, even if creating new ones work.
+## TODO
+
+ * Test the upgrade from the 1.x to the 2.x
 
 ## Links
 
-**AgenDAV**: http://agendav.org/
-
-**YunoHost**: https://yunohost.org/
-
-Repport your issues here: https://dev.yunohost.org/projects/apps/issues (you don't need to create an account and you can use you github credentials if you want)
+ * Report a bug: https://dev.yunohost.org/projects/apps/issues
+ * AgenDAV website: http://agendav.org/
+ * YunoHost website: https://yunohost.org/
