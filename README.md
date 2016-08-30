@@ -12,7 +12,7 @@ AJAX interface to allow users to manage their own calendars and shared ones.
 
 ## TODO
 
- * Test the upgrade from the 1.x to the 2.x
+ * Submit HTTP auth patch for upstream integration
 
 ## Links
 
