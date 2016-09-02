@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set app specific variables
-app="agendav"
+app="$YNH_APP_INSTANCE_NAME"
 dbname=$app
 dbuser=$app
 
@@ -23,3 +23,9 @@ sudo rm -f "/etc/php5/fpm/pool.d/${app}.conf"
 # Reload services
 sudo service php5-fpm restart || true
 sudo service nginx reload || true
+
+# Remove the user account
+# (must be done after php-fpm restart)
+id "$app" >/dev/null 2>&1 \
+  && sudo deluser --quiet --remove-home "$app" >/dev/null \
+  || true

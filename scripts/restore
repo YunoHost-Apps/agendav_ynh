@@ -3,7 +3,7 @@
 set -eu
 
 # Set app specific variables
-app="agendav"
+app="$YNH_APP_INSTANCE_NAME"
 dbname=$app
 dbuser=$app
 
@@ -46,10 +46,16 @@ else
     ynh_die "You must install Baïkal or Radicale before"
 fi
 
+if ! id -u $app > /dev/null 2>&1 ; then
+  sudo useradd -c "$app system account" \
+    -d /var/www/$app --system --user-group $app --shell /usr/sbin/nologin \
+    || ynh_die "Unable to create $app system account"
+fi
+
 # Restore the app files and set permissions
 sudo cp -a ./sources "$DESTDIR"
 sudo chown -hR root: "$DESTDIR"
-sudo chown -hR www-data: "${DESTDIR}/web"
+sudo chown -hR $app: "${DESTDIR}/web/var"
 sudo chmod -R 750 "${DESTDIR}/web/var"
 
 # Clean caches
@@ -66,7 +72,7 @@ sudo sed -i "s@^\(\$app\['caldav.baseurl.public'\] = \).*\
 @\1'${caldav_domain}';@g" "$conf_path"
 
 # Create log directory
-sudo install -m 750 -o www-data -d "/var/log/${app}"
+sudo install -m 750 -o www-data -g adm -d "/var/log/${app}"
 
 # Create and restore the database
 ynh_mysql_create_db "$dbname" "$dbuser" "$dbpass"

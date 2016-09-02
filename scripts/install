@@ -11,7 +11,7 @@ language=$3
 source ./_common.sh
 
 # Set app specific variables
-app="agendav"
+app="$YNH_APP_INSTANCE_NAME"
 dbname=$app
 dbuser=$app
 
@@ -22,6 +22,9 @@ sudo yunohost app checkurl "${domain}${path}" -a "$app" \
 # Set and store language
 language=${LANGUAGES[$3]}
 ynh_app_setting_set "$app" language "$language"
+
+# Define LOGDIR (create it later when user is created)
+LOGDIR=/var/log/$app
 
 # Check destination directory
 DESTDIR="/var/www/${app}"
@@ -54,10 +57,6 @@ encryptkey=$(ynh_string_random 24)
 ynh_app_setting_set "$app" encryptkey "$encryptkey"
 ynh_app_setting_set "$app" mysqlpwd "$dbpass"
 
-# Create log directory
-LOGDIR=/var/log/agendav
-sudo install -m 750 -o www-data -d "$LOGDIR"
-
 # Copy and set AgenDAV configuration
 conf_path="${TMPDIR}/web/config/settings.php"
 cp ../conf/settings.php "$conf_path"
@@ -78,13 +77,19 @@ sed -i "s@{CALDAV_DOMAIN}@${caldav_domain}@g"                "$conf_path"
 
 # Install files and set permissions
 sudo mv "$TMPDIR" "$DESTDIR"
+sudo useradd -c "$app system account" \
+  -d /var/www/$app --system --user-group $app --shell /usr/sbin/nologin \
+  || ynh_die "Unable to create $app system account"
 sudo chown -hR root: "$DESTDIR"
-sudo chown -hR www-data: "${DESTDIR}/web"
+sudo chown -hR $app: "${DESTDIR}/web/var"
 sudo chmod -R 750 "${DESTDIR}/web/var"
+
+# Create log directory
+sudo install -m 750 -o $app -g adm -d "$LOGDIR"
 
 # Initialize database
 ynh_mysql_create_db "$dbname" "$dbuser" "$dbpass"
-(cd "$DESTDIR" && sudo sudo -u www-data \
+(cd "$DESTDIR" && sudo sudo -u $app \
     php agendavcli migrations:migrate --no-interaction) \
   || ynh_die "Unable to create AgenDAV tables"
 
@@ -93,6 +98,7 @@ nginx_conf="/etc/nginx/conf.d/${domain}.d/${app}.conf"
 sed -i "s@{PATH}@${path}@g"        ../conf/nginx.conf
 sed -i "s@{LOCATION}@${path:-/}@g" ../conf/nginx.conf
 sed -i "s@{DESTDIR}@${DESTDIR}@g"  ../conf/nginx.conf
+sed -i "s@{POOLNAME}@${app}@g"     ../conf/nginx.conf
 # comment redirection in case of an installation at root
 [[ -n "$path" ]] || sed -i '$s/^/#/' ../conf/nginx.conf
 sudo cp ../conf/nginx.conf "$nginx_conf"
@@ -101,6 +107,8 @@ sudo cp ../conf/nginx.conf "$nginx_conf"
 phpfpm_conf="/etc/php5/fpm/pool.d/${app}.conf"
 sed -i "s@{POOLNAME}@${app}@g"     ../conf/php-fpm.conf
 sed -i "s@{DESTDIR}@${DESTDIR}/@g" ../conf/php-fpm.conf
+sed -i "s@{USER}@${app}@g"     ../conf/php-fpm.conf
+sed -i "s@{GROUP}@${app}@g"     ../conf/php-fpm.conf
 sudo cp ../conf/php-fpm.conf "$phpfpm_conf"
 
 # Reload services

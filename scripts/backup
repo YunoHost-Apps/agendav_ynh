@@ -3,7 +3,7 @@
 set -eu
 
 # Set app specific variables
-app="agendav"
+app="$YNH_APP_INSTANCE_NAME"
 dbname=$app
 dbuser=$app
 
