@@ -54,9 +54,18 @@ fi
 
 # Restore the app files and set permissions
 sudo cp -a ./sources "$DESTDIR"
+
+# Protect source code against modifications
 sudo chown -hR root: "$DESTDIR"
-sudo chown -hR $app: "${DESTDIR}/web/var"
-sudo chmod -R 750 "${DESTDIR}/web/var"
+
+# Only agendav user should write here
+sudo chown -hR $app: "${DESTDIR}/web/var/cache/"{profiler,twig}
+sudo chmod -R 750 "${DESTDIR}/web/var/cache/"{profiler,twig}
+
+# The agendav user should read here, but does not need to write
+# Other users should not be able to read as it stores passwords.
+sudo find "${DESTDIR}/web/config" -type f -exec chown root:$app {} \; -exec chmod 640 {} \;
+sudo find "${DESTDIR}/web/config" -type d -exec chown root:$app {} \; -exec chmod 750 {} \;
 
 # Clean caches
 sudo rm -rf "${DESTDIR}/web/var/cache/"{profiler,twig}/*
