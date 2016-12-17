@@ -14,6 +14,5 @@ AJAX interface to allow users to manage their own calendars and shared ones.
 
 ## Links
 
- * Report a bug: https://dev.yunohost.org/projects/apps/issues
  * AgenDAV website: http://agendav.org/
  * YunoHost website: https://yunohost.org/
