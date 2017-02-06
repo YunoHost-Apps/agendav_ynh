@@ -8,7 +8,7 @@
     },
     "url": "http://agendav.org/",
     "license": "GPL-3",
-    "version": "2.0.0-beta2",
+    "version": "2.0.0",
     "maintainer": {
         "name": "julien",
         "email": "julien.malik@paraiso.me"

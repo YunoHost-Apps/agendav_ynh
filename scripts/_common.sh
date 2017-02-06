@@ -3,10 +3,10 @@
 #
 
 # AgenDAV version
-VERSION="2.0.0-beta2"
+VERSION="2.0.0"
 
 # Source tarball checksum
-SOURCE_SHA256="5cbb76c08ef1c669e5735473a963ca62b835fd43955d31cc1b6d8d32672bc54d"
+SOURCE_SHA256="142e8d9ea0e3e6feacd1523c5cabc834fe8bc3e9dbae03034089758b9c3abb92"
 
 # Source tarball URL
 SOURCE_URL="https://github.com/adobo/agendav/releases/download/${VERSION}/agendav-${VERSION}.tar.gz"
