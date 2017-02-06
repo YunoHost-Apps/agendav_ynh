@@ -85,7 +85,8 @@ if ! id -u $app > /dev/null 2>&1 ; then
 fi
 
 # Protect source code against modifications
-sudo chown -hR root: "$DESTDIR"
+sudo find "${DESTDIR}" -type f -exec chown root:root {} \; -exec chmod 644 {} \;
+sudo find "${DESTDIR}" -type d -exec chown root:root {} \; -exec chmod 755 {} \;
 
 # Only agendav user should write here
 sudo chown -hR $app: "${DESTDIR}/web/var/cache/"{profiler,twig}
