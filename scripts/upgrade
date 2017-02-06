@@ -54,7 +54,7 @@ ynh_package_is_installed "php5-cli" \
   || ynh_package_install "php5-cli"
 
 # Create tmp directory and fetch app inside
-TMPDIR=$(ynh_mkdir_tmp)
+TMPDIR=$(mktemp -d)
 extract_agendav "$TMPDIR"
 
 # Copy and set AgenDAV configuration
