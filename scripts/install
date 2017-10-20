@@ -13,7 +13,6 @@ ynh_abort_if_errors
 domain=$YNH_APP_ARG_DOMAIN
 path_url=$YNH_APP_ARG_PATH
 language=$YNH_APP_ARG_LANGUAGE
-is_public=$YNH_APP_ARG_IS_PUBLIC
 
 # Set app specific variables
 app=$YNH_APP_INSTANCE_NAME
@@ -26,7 +25,6 @@ path_url=$(ynh_normalize_url_path "$path_url")
 language=${LANGUAGES[$language]}
 
 ynh_app_setting_set "$app" language "$language"
-ynh_app_setting_set "$app" is_public "$is_public"
 ynh_app_setting_set "$app" path "$path_url"
 
 # Check web path availability
@@ -87,7 +85,7 @@ caldav_url="https://${caldav_domain}${caldav_path%/}"
 sed -i "s@{CALDAV_BASEURL}@${caldav_url}${caldav_baseurl}@g" "$conf_path"
 sed -i "s@{CALDAV_DOMAIN}@${caldav_domain}@g"                "$conf_path"
 
-ynh_system_user_create "$app" "$final_path"
+ynh_system_user_create "$app"
 
 # Protect source code against modifications
 find "${final_path}" -type f -exec chown root:root {} \; -exec chmod 644 {} \;
@@ -120,21 +118,7 @@ ynh_add_nginx_config
 # Copy and set php-fpm configuration
 ynh_add_fpm_config
 
-if [ "$is_public" -eq 0 ]
-then	# Remove the public access
-	ynh_app_setting_delete "$app" skipped_uris
-fi
-# Make app public if necessary
-if [ "$is_public" -eq 1 ]
-then
-	# unprotected_uris allows SSO credentials to be passed anyway.
-	ynh_app_setting_set "$app" unprotected_uris "/"
-
-	# ynh panel is not needed
-	ynh_replace_string "	include conf.d/"  "	#include conf.d/"  "$finalnginxconf"
-
-	ynh_store_file_checksum "$finalnginxconf"
-fi
+ynh_app_setting_delete "$app" skipped_uris
 
 # Reload services
 service php5-fpm restart

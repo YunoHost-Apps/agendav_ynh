@@ -20,7 +20,6 @@ path_url=$(ynh_app_setting_get "$app" path)
 dbpass=$(ynh_app_setting_get "$app" mysqlpwd)
 encryptkey=$(ynh_app_setting_get "$app" encryptkey)
 language=$(ynh_app_setting_get "$app" language)
-is_public=$(ynh_app_setting_get "$app" is_public)
 
 # Set and store language
 if [[ -z "$language" ]]; then
@@ -108,21 +107,7 @@ ynh_add_nginx_config
 # Copy and set php-fpm configuration
 ynh_add_fpm_config
 
-if [ $is_public -eq 0 ]
-then	# Remove the public access
-	ynh_app_setting_delete "$app" skipped_uris
-fi
-# Make app public if necessary
-if [ $is_public -eq 1 ]
-then
-	# unprotected_uris allows SSO credentials to be passed anyway
-	ynh_app_setting_set "$app" unprotected_uris "/"
-
-	# ynh panel is not needed
-	ynh_replace_string "	include conf.d/"  "	#include conf.d/"  "$finalnginxconf"
-
-	ynh_store_file_checksum "$finalnginxconf"
-fi
+ynh_app_setting_delete "$app" skipped_uris
 
 # Reload services
 service php5-fpm restart

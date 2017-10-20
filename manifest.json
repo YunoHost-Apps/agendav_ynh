@@ -44,14 +44,6 @@
                 "default": "/agendav"
             },
             {
-		"name": "is_public",
-		"type": "boolean",
-		"ask": {
-			"en": "Should Agendav be publicly accessible?"
-		},
-		"default": "0"
-	    },
-            {
                 "name": "language",
                 "ask": {
                     "en": "Default language to be used in AgenDAV",
