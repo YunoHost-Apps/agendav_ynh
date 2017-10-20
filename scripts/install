@@ -49,12 +49,11 @@ else
 fi
 
 # Install dependencies
-ynh_package_is_installed "php5-cli" \
-  || ynh_package_install "php5-cli"
+ynh_install_app_dependencies "php5-cli"
 
 # Create tmp directory and fetch app inside
 TMPDIR=$(mktemp -d)
-extract_agendav "$TMPDIR"
+ynh_setup_source "$TMPDIR"
 
 # Generate random password and encryption key
 dbpass=$(ynh_string_random)

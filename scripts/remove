@@ -23,6 +23,9 @@ rm -rf "/var/www/${app}" "/var/log/${app}"
 rm -f "/etc/php5/fpm/pool.d/${app}.conf"
 [[ -n $domain ]] && rm -f "/etc/nginx/conf.d/${domain}.d/${app}.conf"
 
+# Remove metapackage and its dependencies
+ynh_remove_app_dependencies
+
 # Reload services
 service php5-fpm restart || true
 service nginx reload || true

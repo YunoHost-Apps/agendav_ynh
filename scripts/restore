@@ -14,9 +14,6 @@ app="$YNH_APP_INSTANCE_NAME"
 dbname=$app
 dbuser=$app
 
-# Source app helpers
-source /usr/share/yunohost/helpers
-
 # Retrieve old app settings
 domain=$(ynh_app_setting_get "$app" domain)
 path=$(ynh_app_setting_get "$app" path)
@@ -24,6 +21,9 @@ dbpass=$(ynh_app_setting_get "$app" mysqlpwd)
 
 # Check web path availability
 ynh_webpath_available "$domain" "$path"
+
+# Install dependencies
+ynh_install_app_dependencies "php5-cli"
 
 # Check destination directory
 DESTDIR="/var/www/$app"
