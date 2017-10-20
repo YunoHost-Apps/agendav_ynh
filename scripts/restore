@@ -16,30 +16,18 @@ dbuser=$app
 
 # Retrieve old app settings
 domain=$(ynh_app_setting_get "$app" domain)
-path=$(ynh_app_setting_get "$app" path)
+path_url=$(ynh_app_setting_get "$app" path)
 dbpass=$(ynh_app_setting_get "$app" mysqlpwd)
 
 # Check web path availability
-ynh_webpath_available "$domain" "$path"
+ynh_webpath_available "$domain" "$path_url"
 
 # Install dependencies
 ynh_install_app_dependencies "php5-cli"
 
 # Check destination directory
-DESTDIR="/var/www/$app"
-[[ -d $DESTDIR ]] && ynh_die \
-"The destination directory '$DESTDIR' already exists.\
- You should safely delete it before restoring this app."
-
-# Check configuration files
-nginx_conf="/etc/nginx/conf.d/${domain}.d/${app}.conf"
-[[ -f $nginx_conf ]] && ynh_die \
-"The NGINX configuration already exists at '${nginx_conf}'.
- You should safely delete it before restoring this app."
-phpfpm_conf="/etc/php5/fpm/pool.d/${app}.conf"
-[[ -f $phpfpm_conf ]] && ynh_die \
-"The PHP FPM configuration already exists at '${phpfpm_conf}'.
- You should safely delete it before restoring this app."
+final_path="/var/www/$app"
+ynh_restore_file "$final_path"
 
 # Check whether Baïkal or Radicale is installed
 if yunohost app list --installed -f baikal | grep -q id ; then
@@ -54,29 +42,26 @@ fi
 
 ynh_system_user_create "$app" "$final_path"
 
-# Restore the app files and set permissions
-cp -a ./sources "$DESTDIR"
-
 # Protect source code against modifications
-chown -hR root: "$DESTDIR"
+chown -hR root: "$final_path"
 
 # Only agendav user should write here
-chown -hR $app: "${DESTDIR}/web/var/cache/"{profiler,twig}
-chmod -R 750 "${DESTDIR}/web/var/cache/"{profiler,twig}
+chown -hR $app: "${final_path}/web/var/cache/"{profiler,twig}
+chmod -R 750 "${final_path}/web/var/cache/"{profiler,twig}
 
 # The agendav user should read here, but does not need to write
 # Other users should not be able to read as it stores passwords.
-find "${DESTDIR}/web/config" -type f -exec chown root:$app {} \; -exec chmod 640 {} \;
-find "${DESTDIR}/web/config" -type d -exec chown root:$app {} \; -exec chmod 750 {} \;
+find "${final_path}/web/config" -type f -exec chown root:$app {} \; -exec chmod 640 {} \;
+find "${final_path}/web/config" -type d -exec chown root:$app {} \; -exec chmod 750 {} \;
 
 # Clean caches
-rm -rf "${DESTDIR}/web/var/cache/"{profiler,twig}/*
+ynh_secure_remove "${final_path}/web/var/cache/"{profiler,twig}/*
 
 # CalDAV config
 caldav_domain=$(ynh_app_setting_get "$caldav_app" domain)
 caldav_path=$(ynh_app_setting_get "$caldav_app" path)
 caldav_url="https://${caldav_domain}${caldav_path%/}"
-conf_path="${DESTDIR}/web/config/settings.php"
+conf_path="${final_path}/web/config/settings.php"
 sed -i "s@^\(\$app\['caldav.baseurl'\] = \).*\
 @\1'${caldav_url}${caldav_baseurl}';@g" "$conf_path"
 sed -i "s@^\(\$app\['caldav.baseurl.public'\] = \).*\
@@ -90,8 +75,8 @@ ynh_mysql_create_db "$dbname" "$dbuser" "$dbpass"
 ynh_mysql_connect_as "$dbuser" "$dbpass" "$dbname" < ./dump.sql
 
 # Restore configuration files
-cp -a ./nginx.conf   "$nginx_conf"
-cp -a ./php-fpm.conf "$phpfpm_conf"
+ynh_restore_file "/etc/nginx/conf.d/${domain}.d/${app}.conf"
+ynh_restore_file "/etc/php5/fpm/pool.d/${app}.conf"
 
 # Reload services
 service php5-fpm restart

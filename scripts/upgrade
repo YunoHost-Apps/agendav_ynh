@@ -16,7 +16,7 @@ dbuser=$app
 
 # Retrieve arguments
 domain=$(ynh_app_setting_get "$app" domain)
-path=$(ynh_app_setting_get "$app" path)
+path_url=$(ynh_app_setting_get "$app" path)
 dbpass=$(ynh_app_setting_get "$app" mysqlpwd)
 encryptkey=$(ynh_app_setting_get "$app" encryptkey)
 language=$(ynh_app_setting_get "$app" language)
@@ -38,9 +38,6 @@ LOGDIR=/var/log/$app
 
 # Check destination directory
 final_path=/var/www/$app
-test ! -e "$final_path" || ynh_die "This path already contains a folder"
-
-mkdir -p "$final_path"
 
 # Check whether Baïkal or Radicale is installed
 baikal_install=$(agendav_app_check_installation "baikal")
@@ -122,9 +119,9 @@ then
 	ynh_app_setting_set "$app" unprotected_uris "/"
 
 	# ynh panel is not needed
-	ynh_replace_string "	include conf.d/"  "	#include conf.d/"  "$nginx_conf"
+	ynh_replace_string "	include conf.d/"  "	#include conf.d/"  "$finalnginxconf"
 
-	ynh_store_file_checksum "$nginx_conf"
+	ynh_store_file_checksum "$finalnginxconf"
 fi
 
 # Reload services

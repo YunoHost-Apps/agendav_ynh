@@ -11,7 +11,7 @@ ynh_abort_if_errors
 
 # Retrieve arguments
 domain=$YNH_APP_ARG_DOMAIN
-path=$YNH_APP_ARG_PATH
+path_url=$YNH_APP_ARG_PATH
 language=$YNH_APP_ARG_LANGUAGE
 is_public=$YNH_APP_ARG_IS_PUBLIC
 
@@ -20,19 +20,19 @@ app=$YNH_APP_INSTANCE_NAME
 dbname=$app
 dbuser=$app
 
-path=$(ynh_normalize_url_path "$path")
+path_url=$(ynh_normalize_url_path "$path_url")
 
 # Set and store language
 language=${LANGUAGES[$language]}
 
 ynh_app_setting_set "$app" language "$language"
 ynh_app_setting_set "$app" is_public "$is_public"
-ynh_app_setting_set "$app" path "$path"
+ynh_app_setting_set "$app" path "$path_url"
 
 # Check web path availability
-ynh_webpath_available "$domain" "$path"
+ynh_webpath_available "$domain" "$path_url"
 # Register (book) web path
-ynh_webpath_register "$app" "$domain" "$path"
+ynh_webpath_register "$app" "$domain" "$path_url"
 
 # Define LOGDIR (create it later when user is created)
 LOGDIR=/var/log/$app
@@ -131,9 +131,9 @@ then
 	ynh_app_setting_set "$app" unprotected_uris "/"
 
 	# ynh panel is not needed
-	ynh_replace_string "	include conf.d/"  "	#include conf.d/"  "$nginx_conf"
+	ynh_replace_string "	include conf.d/"  "	#include conf.d/"  "$finalnginxconf"
 
-	ynh_store_file_checksum "$nginx_conf"
+	ynh_store_file_checksum "$finalnginxconf"
 fi
 
 # Reload services

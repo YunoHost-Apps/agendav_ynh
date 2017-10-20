@@ -19,9 +19,10 @@ ynh_mysql_drop_user "$dbuser"
 domain=$(ynh_app_setting_get "$app" domain)
 
 # Delete app directory and configurations
-rm -rf "/var/www/${app}" "/var/log/${app}"
-rm -f "/etc/php5/fpm/pool.d/${app}.conf"
-[[ -n $domain ]] && rm -f "/etc/nginx/conf.d/${domain}.d/${app}.conf"
+ynh_secure_remove "/var/www/${app}"
+ynh_secure_remove "/var/log/${app}"
+ynh_remove_fpm_config
+ynh_remove_nginx_config
 
 # Remove metapackage and its dependencies
 ynh_remove_app_dependencies
