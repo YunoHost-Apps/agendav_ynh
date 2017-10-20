@@ -1,12 +1,15 @@
 #!/bin/bash
 
+# Source local helpers
+source ./_common.sh
+
+# Source app helpers
+source /usr/share/yunohost/helpers
+
 # Set app specific variables
 app="$YNH_APP_INSTANCE_NAME"
 dbname=$app
 dbuser=$app
-
-# Source YunoHost helpers
-source /usr/share/yunohost/helpers
 
 # Drop MySQL database and user
 ynh_mysql_drop_db "$dbname" || true
@@ -16,16 +19,16 @@ ynh_mysql_drop_user "$dbuser" || true
 domain=$(ynh_app_setting_get "$app" domain)
 
 # Delete app directory and configurations
-sudo rm -rf "/var/www/${app}" "/var/log/${app}"
-sudo rm -f "/etc/php5/fpm/pool.d/${app}.conf"
-[[ -n $domain ]] && sudo rm -f "/etc/nginx/conf.d/${domain}.d/${app}.conf"
+rm -rf "/var/www/${app}" "/var/log/${app}"
+rm -f "/etc/php5/fpm/pool.d/${app}.conf"
+[[ -n $domain ]] && rm -f "/etc/nginx/conf.d/${domain}.d/${app}.conf"
 
 # Reload services
-sudo service php5-fpm restart || true
-sudo service nginx reload || true
+service php5-fpm restart || true
+service nginx reload || true
 
 # Remove the user account
 # (must be done after php-fpm restart)
 id "$app" >/dev/null 2>&1 \
-  && sudo deluser --quiet --remove-home "$app" >/dev/null \
+  && deluser --quiet --remove-home "$app" >/dev/null \
   || true

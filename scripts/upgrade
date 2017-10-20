@@ -1,9 +1,13 @@
 #!/bin/bash
 
-set -eu
-
-# Source common variables and helpers
+# Source local helpers
 source ./_common.sh
+
+# Source app helpers
+source /usr/share/yunohost/helpers
+
+# Abort script if errors
+ynh_abort_if_errors
 
 # Set app specific variables
 app="$YNH_APP_INSTANCE_NAME"
@@ -39,10 +43,10 @@ DESTDIR="/var/www/$app"
  The app is not correctly installed, you should remove it first."
 
 # Check whether Baïkal or Radicale is installed
-if sudo yunohost app list --installed -f baikal | grep -q id ; then
+if yunohost app list --installed -f baikal | grep -q id ; then
     caldav_app="baikal"
     caldav_baseurl="/cal.php/"
-elif sudo yunohost app list --installed -f radicale | grep -q id ; then
+elif yunohost app list --installed -f radicale | grep -q id ; then
     caldav_app="radicale"
     caldav_baseurl="/"
 else
@@ -76,32 +80,32 @@ sed -i "s@{CALDAV_BASEURL}@${caldav_url}${caldav_baseurl}@g" "$conf_path"
 sed -i "s@{CALDAV_DOMAIN}@${caldav_domain}@g"                "$conf_path"
 
 # Replace files and set permissions
-sudo rm -rf "$DESTDIR"
-sudo mv "$TMPDIR" "$DESTDIR"
+rm -rf "$DESTDIR"
+mv "$TMPDIR" "$DESTDIR"
 if ! id -u $app > /dev/null 2>&1 ; then
-  sudo useradd -c "$app system account" \
+  useradd -c "$app system account" \
     -d /var/www/$app --system --user-group $app --shell /usr/sbin/nologin \
     || ynh_die "Unable to create $app system account"
 fi
 
 # Protect source code against modifications
-sudo find "${DESTDIR}" -type f -exec chown root:root {} \; -exec chmod 644 {} \;
-sudo find "${DESTDIR}" -type d -exec chown root:root {} \; -exec chmod 755 {} \;
+find "${DESTDIR}" -type f -exec chown root:root {} \; -exec chmod 644 {} \;
+find "${DESTDIR}" -type d -exec chown root:root {} \; -exec chmod 755 {} \;
 
 # Only agendav user should write here
-sudo chown -hR $app: "${DESTDIR}/web/var/cache/"{profiler,twig}
-sudo chmod -R 750 "${DESTDIR}/web/var/cache/"{profiler,twig}
+chown -hR $app: "${DESTDIR}/web/var/cache/"{profiler,twig}
+chmod -R 750 "${DESTDIR}/web/var/cache/"{profiler,twig}
 
 # The agendav user should read here, but does not need to write
 # Other users should not be able to read as it stores passwords.
-sudo find "${DESTDIR}/web/config" -type f -exec chown root:$app {} \; -exec chmod 640 {} \;
-sudo find "${DESTDIR}/web/config" -type d -exec chown root:$app {} \; -exec chmod 750 {} \;
+find "${DESTDIR}/web/config" -type f -exec chown root:$app {} \; -exec chmod 640 {} \;
+find "${DESTDIR}/web/config" -type d -exec chown root:$app {} \; -exec chmod 750 {} \;
 
 # Create log directory
-sudo install -m 750 -o $app -g adm -d "$LOGDIR"
+install -m 750 -o $app -g adm -d "$LOGDIR"
 
 # Run database migrations
-(cd "$DESTDIR" && sudo sudo -u $app \
+(cd "$DESTDIR" && -u $app \
     php agendavcli migrations:migrate --no-interaction) \
   || ynh_die "Unable to run AgenDAV database migration"
 
@@ -113,7 +117,7 @@ sed -i "s@{DESTDIR}@${DESTDIR}@g"  ../conf/nginx.conf
 sed -i "s@{POOLNAME}@${app}@g"     ../conf/nginx.conf
 # comment redirection in case of an installation at root
 [[ -n "$path" ]] || sed -i '$s/^/#/' ../conf/nginx.conf
-sudo cp ../conf/nginx.conf "$nginx_conf"
+cp ../conf/nginx.conf "$nginx_conf"
 
 # Copy and set php-fpm configuration
 phpfpm_conf="/etc/php5/fpm/pool.d/${app}.conf"
@@ -121,8 +125,8 @@ sed -i "s@{POOLNAME}@${app}@g"     ../conf/php-fpm.conf
 sed -i "s@{DESTDIR}@${DESTDIR}/@g" ../conf/php-fpm.conf
 sed -i "s@{USER}@${app}@g"     ../conf/php-fpm.conf
 sed -i "s@{GROUP}@${app}@g"     ../conf/php-fpm.conf
-sudo cp ../conf/php-fpm.conf "$phpfpm_conf"
+cp ../conf/php-fpm.conf "$phpfpm_conf"
 
 # Reload services
-sudo service php5-fpm restart || true
-sudo service nginx reload || true
+service php5-fpm restart || true
+service nginx reload || true

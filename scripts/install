@@ -1,23 +1,28 @@
 #!/bin/bash
 
-set -eu
-
-# Retrieve arguments
-domain=$1
-path=${2%/}
-language=$3
-
-# Source common variables and helpers
+# Source local helpers
 source ./_common.sh
 
+# Source app helpers
+source /usr/share/yunohost/helpers
+
+# Abort script if errors
+ynh_abort_if_errors
+
+# Retrieve arguments
+domain=$YNH_APP_ARG_DOMAIN
+path=$YNH_APP_ARG_PATH
+language=$YNH_APP_ARG_LANGUAGE
+
 # Set app specific variables
-app="$YNH_APP_INSTANCE_NAME"
+app=$YNH_APP_INSTANCE_NAME
 dbname=$app
 dbuser=$app
 
-# Check domain/path availability
-sudo yunohost app checkurl "${domain}${path}" -a "$app" \
-  || exit 1
+# Check web path availability
+ynh_webpath_available "$domain" "$path"
+# Register (book) web path
+ynh_webpath_register "$app" "$domain" "$path"
 
 # Set and store language
 language=${LANGUAGES[$3]}
@@ -33,10 +38,10 @@ DESTDIR="/var/www/${app}"
  You should safely delete it before installing this app."
 
 # Check whether Baïkal or Radicale is installed
-if sudo yunohost app list --installed -f baikal | grep -q id ; then
+if yunohost app list --installed -f baikal | grep -q id ; then
     caldav_app="baikal"
     caldav_baseurl="/cal.php/"
-elif sudo yunohost app list --installed -f radicale | grep -q id ; then
+elif yunohost app list --installed -f radicale | grep -q id ; then
     caldav_app="radicale"
     caldav_baseurl="/"
 else
@@ -76,31 +81,31 @@ sed -i "s@{CALDAV_BASEURL}@${caldav_url}${caldav_baseurl}@g" "$conf_path"
 sed -i "s@{CALDAV_DOMAIN}@${caldav_domain}@g"                "$conf_path"
 
 # Install files and set permissions
-sudo mv "$TMPDIR" "$DESTDIR"
+mv "$TMPDIR" "$DESTDIR"
 
-sudo useradd -c "$app system account" \
+useradd -c "$app system account" \
   -d /var/www/$app --system --user-group $app --shell /usr/sbin/nologin \
   || ynh_die "Unable to create $app system account"
 
 # Protect source code against modifications
-sudo find "${DESTDIR}" -type f -exec chown root:root {} \; -exec chmod 644 {} \;
-sudo find "${DESTDIR}" -type d -exec chown root:root {} \; -exec chmod 755 {} \;
+find "${DESTDIR}" -type f -exec chown root:root {} \; -exec chmod 644 {} \;
+find "${DESTDIR}" -type d -exec chown root:root {} \; -exec chmod 755 {} \;
 
 # Only agendav user should write here
-sudo chown -hR $app: "${DESTDIR}/web/var/cache/"{profiler,twig}
-sudo chmod -R 750 "${DESTDIR}/web/var/cache/"{profiler,twig}
+chown -hR $app: "${DESTDIR}/web/var/cache/"{profiler,twig}
+chmod -R 750 "${DESTDIR}/web/var/cache/"{profiler,twig}
 
 # The agendav user should read here, but does not need to write
 # Other users should not be able to read as it stores passwords.
-sudo find "${DESTDIR}/web/config" -type f -exec chown root:$app {} \; -exec chmod 640 {} \;
-sudo find "${DESTDIR}/web/config" -type d -exec chown root:$app {} \; -exec chmod 750 {} \;
+find "${DESTDIR}/web/config" -type f -exec chown root:$app {} \; -exec chmod 640 {} \;
+find "${DESTDIR}/web/config" -type d -exec chown root:$app {} \; -exec chmod 750 {} \;
 
 # Create log directory
-sudo install -m 750 -o $app -g adm -d "$LOGDIR"
+install -m 750 -o $app -g adm -d "$LOGDIR"
 
 # Initialize database
 ynh_mysql_create_db "$dbname" "$dbuser" "$dbpass"
-(cd "$DESTDIR" && sudo sudo -u $app \
+(cd "$DESTDIR" && -u $app \
     php agendavcli migrations:migrate --no-interaction) \
   || ynh_die "Unable to create AgenDAV tables"
 
@@ -112,7 +117,7 @@ sed -i "s@{DESTDIR}@${DESTDIR}@g"  ../conf/nginx.conf
 sed -i "s@{POOLNAME}@${app}@g"     ../conf/nginx.conf
 # comment redirection in case of an installation at root
 [[ -n "$path" ]] || sed -i '$s/^/#/' ../conf/nginx.conf
-sudo cp ../conf/nginx.conf "$nginx_conf"
+cp ../conf/nginx.conf "$nginx_conf"
 
 # Copy and set php-fpm configuration
 phpfpm_conf="/etc/php5/fpm/pool.d/${app}.conf"
@@ -120,8 +125,8 @@ sed -i "s@{POOLNAME}@${app}@g"     ../conf/php-fpm.conf
 sed -i "s@{DESTDIR}@${DESTDIR}/@g" ../conf/php-fpm.conf
 sed -i "s@{USER}@${app}@g"     ../conf/php-fpm.conf
 sed -i "s@{GROUP}@${app}@g"     ../conf/php-fpm.conf
-sudo cp ../conf/php-fpm.conf "$phpfpm_conf"
+cp ../conf/php-fpm.conf "$phpfpm_conf"
 
 # Reload services
-sudo service php5-fpm restart
-sudo service nginx reload
+service php5-fpm restart
+service nginx reload

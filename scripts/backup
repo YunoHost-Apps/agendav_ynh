@@ -1,14 +1,18 @@
 #!/bin/bash
 
-set -eu
+# Source local helpers
+source ./_common.sh
+
+# Source app helpers
+source /usr/share/yunohost/helpers
+
+# Abort script if errors
+ynh_abort_if_errors
 
 # Set app specific variables
 app="$YNH_APP_INSTANCE_NAME"
 dbname=$app
 dbuser=$app
-
-# Source YunoHost helpers
-source /usr/share/yunohost/helpers
 
 # Retrieve app settings
 domain=$(ynh_app_setting_get "$app" domain)

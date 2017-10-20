@@ -1,6 +1,13 @@
 #!/bin/bash
 
-set -eu
+# Source local helpers
+source ./_common.sh
+
+# Source app helpers
+source /usr/share/yunohost/helpers
+
+# Abort script if errors
+ynh_abort_if_errors
 
 # Set app specific variables
 app="$YNH_APP_INSTANCE_NAME"
@@ -15,9 +22,8 @@ domain=$(ynh_app_setting_get "$app" domain)
 path=$(ynh_app_setting_get "$app" path)
 dbpass=$(ynh_app_setting_get "$app" mysqlpwd)
 
-# Check domain/path availability
-sudo yunohost app checkurl "${domain}${path}" -a "$app" \
-  || exit 1
+# Check web path availability
+ynh_webpath_available "$domain" "$path"
 
 # Check destination directory
 DESTDIR="/var/www/$app"
@@ -36,10 +42,10 @@ phpfpm_conf="/etc/php5/fpm/pool.d/${app}.conf"
  You should safely delete it before restoring this app."
 
 # Check whether Baïkal or Radicale is installed
-if sudo yunohost app list --installed -f baikal | grep -q id ; then
+if yunohost app list --installed -f baikal | grep -q id ; then
     caldav_app="baikal"
     caldav_baseurl="/cal.php/"
-elif sudo yunohost app list --installed -f radicale | grep -q id ; then
+elif yunohost app list --installed -f radicale | grep -q id ; then
     caldav_app="radicale"
     caldav_baseurl="/"
 else
@@ -47,50 +53,50 @@ else
 fi
 
 if ! id -u $app > /dev/null 2>&1 ; then
-  sudo useradd -c "$app system account" \
+  useradd -c "$app system account" \
     -d /var/www/$app --system --user-group $app --shell /usr/sbin/nologin \
     || ynh_die "Unable to create $app system account"
 fi
 
 # Restore the app files and set permissions
-sudo cp -a ./sources "$DESTDIR"
+cp -a ./sources "$DESTDIR"
 
 # Protect source code against modifications
-sudo chown -hR root: "$DESTDIR"
+chown -hR root: "$DESTDIR"
 
 # Only agendav user should write here
-sudo chown -hR $app: "${DESTDIR}/web/var/cache/"{profiler,twig}
-sudo chmod -R 750 "${DESTDIR}/web/var/cache/"{profiler,twig}
+chown -hR $app: "${DESTDIR}/web/var/cache/"{profiler,twig}
+chmod -R 750 "${DESTDIR}/web/var/cache/"{profiler,twig}
 
 # The agendav user should read here, but does not need to write
 # Other users should not be able to read as it stores passwords.
-sudo find "${DESTDIR}/web/config" -type f -exec chown root:$app {} \; -exec chmod 640 {} \;
-sudo find "${DESTDIR}/web/config" -type d -exec chown root:$app {} \; -exec chmod 750 {} \;
+find "${DESTDIR}/web/config" -type f -exec chown root:$app {} \; -exec chmod 640 {} \;
+find "${DESTDIR}/web/config" -type d -exec chown root:$app {} \; -exec chmod 750 {} \;
 
 # Clean caches
-sudo rm -rf "${DESTDIR}/web/var/cache/"{profiler,twig}/*
+rm -rf "${DESTDIR}/web/var/cache/"{profiler,twig}/*
 
 # CalDAV config
 caldav_domain=$(ynh_app_setting_get "$caldav_app" domain)
 caldav_path=$(ynh_app_setting_get "$caldav_app" path)
 caldav_url="https://${caldav_domain}${caldav_path%/}"
 conf_path="${DESTDIR}/web/config/settings.php"
-sudo sed -i "s@^\(\$app\['caldav.baseurl'\] = \).*\
+sed -i "s@^\(\$app\['caldav.baseurl'\] = \).*\
 @\1'${caldav_url}${caldav_baseurl}';@g" "$conf_path"
-sudo sed -i "s@^\(\$app\['caldav.baseurl.public'\] = \).*\
+sed -i "s@^\(\$app\['caldav.baseurl.public'\] = \).*\
 @\1'${caldav_domain}';@g" "$conf_path"
 
 # Create log directory
-sudo install -m 750 -o www-data -g adm -d "/var/log/${app}"
+install -m 750 -o www-data -g adm -d "/var/log/${app}"
 
 # Create and restore the database
 ynh_mysql_create_db "$dbname" "$dbuser" "$dbpass"
 ynh_mysql_connect_as "$dbuser" "$dbpass" "$dbname" < ./dump.sql
 
 # Restore configuration files
-sudo cp -a ./nginx.conf   "$nginx_conf"
-sudo cp -a ./php-fpm.conf "$phpfpm_conf"
+cp -a ./nginx.conf   "$nginx_conf"
+cp -a ./php-fpm.conf "$phpfpm_conf"
 
 # Reload services
-sudo service php5-fpm restart
-sudo service nginx reload
+service php5-fpm restart
+service nginx reload
