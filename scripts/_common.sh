@@ -17,4 +17,6 @@ declare -A LANGUAGES=(
 # Common helpers
 #
 
-
+agendav_app_check_installation() {
+	echo $(yunohost app list --installed -f "$1" | grep "id:")
+}

@@ -13,20 +13,26 @@ ynh_abort_if_errors
 domain=$YNH_APP_ARG_DOMAIN
 path=$YNH_APP_ARG_PATH
 language=$YNH_APP_ARG_LANGUAGE
+is_public=$YNH_APP_ARG_IS_PUBLIC
 
 # Set app specific variables
 app=$YNH_APP_INSTANCE_NAME
 dbname=$app
 dbuser=$app
 
+path=$(ynh_normalize_url_path "$path")
+
+# Set and store language
+language=${LANGUAGES[$language]}
+
+ynh_app_setting_set "$app" language "$language"
+ynh_app_setting_set "$app" is_public "$is_public"
+ynh_app_setting_set "$app" path "$path"
+
 # Check web path availability
 ynh_webpath_available "$domain" "$path"
 # Register (book) web path
 ynh_webpath_register "$app" "$domain" "$path"
-
-# Set and store language
-language=${LANGUAGES[$3]}
-ynh_app_setting_set "$app" language "$language"
 
 # Define LOGDIR (create it later when user is created)
 LOGDIR=/var/log/$app
@@ -37,23 +43,27 @@ DESTDIR="/var/www/${app}"
 "The destination directory '${DESTDIR}' already exists.\
  You should safely delete it before installing this app."
 
+mkdir -p "$DESTDIR"
+
 # Check whether Baïkal or Radicale is installed
-if yunohost app list --installed -f baikal | grep -q id ; then
+baikal_install=$(agendav_app_check_installation "baikal")
+radicale_install=$(agendav_app_check_installation "radicale")
+if [[ -n "$baikal_install" ]]
+then
     caldav_app="baikal"
     caldav_baseurl="/cal.php/"
-elif yunohost app list --installed -f radicale | grep -q id ; then
+elif [[ -n "$radicale_install" ]]
+then
     caldav_app="radicale"
     caldav_baseurl="/"
 else
-    ynh_die "You must install Baïkal or Radicale before"
+    ynh_die "Baikal or Radicale is mandatory"
 fi
 
 # Install dependencies
-ynh_install_app_dependencies "php5-cli"
+ynh_install_app_dependencies php5-cli
 
-# Create tmp directory and fetch app inside
-TMPDIR=$(mktemp -d)
-ynh_setup_source "$TMPDIR"
+ynh_setup_source "$DESTDIR"
 
 # Generate random password and encryption key
 dbpass=$(ynh_string_random)
@@ -62,7 +72,7 @@ ynh_app_setting_set "$app" encryptkey "$encryptkey"
 ynh_app_setting_set "$app" mysqlpwd "$dbpass"
 
 # Copy and set AgenDAV configuration
-conf_path="${TMPDIR}/web/config/settings.php"
+conf_path="${DESTDIR}/web/config/settings.php"
 cp ../conf/settings.php "$conf_path"
 sed -i "s/{DBUSER}/${dbuser}/g"              "$conf_path"
 sed -i "s/{DBPASS}/${dbpass}/g"              "$conf_path"
@@ -79,12 +89,7 @@ caldav_url="https://${caldav_domain}${caldav_path%/}"
 sed -i "s@{CALDAV_BASEURL}@${caldav_url}${caldav_baseurl}@g" "$conf_path"
 sed -i "s@{CALDAV_DOMAIN}@${caldav_domain}@g"                "$conf_path"
 
-# Install files and set permissions
-mv "$TMPDIR" "$DESTDIR"
-
-useradd -c "$app system account" \
-  -d /var/www/$app --system --user-group $app --shell /usr/sbin/nologin \
-  || ynh_die "Unable to create $app system account"
+ynh_system_user_create "$app" "$DESTDIR"
 
 # Protect source code against modifications
 find "${DESTDIR}" -type f -exec chown root:root {} \; -exec chmod 644 {} \;
@@ -104,9 +109,12 @@ install -m 750 -o $app -g adm -d "$LOGDIR"
 
 # Initialize database
 ynh_mysql_create_db "$dbname" "$dbuser" "$dbpass"
-(cd "$DESTDIR" && -u $app \
-    php agendavcli migrations:migrate --no-interaction) \
-  || ynh_die "Unable to create AgenDAV tables"
+
+# Run database migrations
+(
+	cd $DESTDIR
+	php agendavcli migrations:migrate --no-interaction
+)
 
 # Copy and set nginx configuration
 nginx_conf="/etc/nginx/conf.d/${domain}.d/${app}.conf"
@@ -125,6 +133,22 @@ sed -i "s@{DESTDIR}@${DESTDIR}/@g" ../conf/php-fpm.conf
 sed -i "s@{USER}@${app}@g"     ../conf/php-fpm.conf
 sed -i "s@{GROUP}@${app}@g"     ../conf/php-fpm.conf
 cp ../conf/php-fpm.conf "$phpfpm_conf"
+
+if [ "$is_public" -eq 0 ]
+then	# Remove the public access
+	ynh_app_setting_delete "$app" skipped_uris
+fi
+# Make app public if necessary
+if [ "$is_public" -eq 1 ]
+then
+	# unprotected_uris allows SSO credentials to be passed anyway.
+	ynh_app_setting_set "$app" unprotected_uris "/"
+
+	# ynh panel is not needed
+	ynh_replace_string "	include conf.d/"  "	#include conf.d/"  "$nginx_conf"
+
+	ynh_store_file_checksum "$nginx_conf"
+fi
 
 # Reload services
 service php5-fpm restart
