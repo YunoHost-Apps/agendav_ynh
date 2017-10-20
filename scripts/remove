@@ -12,8 +12,8 @@ dbname=$app
 dbuser=$app
 
 # Drop MySQL database and user
-ynh_mysql_drop_db "$dbname" || true
-ynh_mysql_drop_user "$dbuser" || true
+ynh_mysql_drop_db "$dbname"
+ynh_mysql_drop_user "$dbuser"
 
 # Retrieve domain from app settings
 domain=$(ynh_app_setting_get "$app" domain)
@@ -27,11 +27,8 @@ rm -f "/etc/php5/fpm/pool.d/${app}.conf"
 ynh_remove_app_dependencies
 
 # Reload services
-service php5-fpm restart || true
-service nginx reload || true
+service php5-fpm restart
+service nginx reload
 
 # Remove the user account
-# (must be done after php-fpm restart)
-id "$app" >/dev/null 2>&1 \
-  && deluser --quiet --remove-home "$app" >/dev/null \
-  || true
+ynh_system_user_delete "$app"

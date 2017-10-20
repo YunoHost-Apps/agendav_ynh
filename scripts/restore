@@ -52,11 +52,7 @@ else
     ynh_die "You must install Baïkal or Radicale before"
 fi
 
-if ! id -u $app > /dev/null 2>&1 ; then
-  useradd -c "$app system account" \
-    -d /var/www/$app --system --user-group $app --shell /usr/sbin/nologin \
-    || ynh_die "Unable to create $app system account"
-fi
+ynh_system_user_create "$app" "$final_path"
 
 # Restore the app files and set permissions
 cp -a ./sources "$DESTDIR"
