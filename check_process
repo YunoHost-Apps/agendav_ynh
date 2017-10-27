@@ -3,8 +3,8 @@
 	; Manifest
 		domain="domain.tld"	(DOMAIN)
 		path="/path"	(PATH)
-		is_public=1	(PUBLIC|public=1|private=0)
 		language="fr"
+		disablecacheck=0
 	; pre-install
 		sudo yunohost domain add --verbose baikaldomain.tld --admin-password $PASSWORD
 		sudo yunohost app install baikal -a "domain=baikaldomain.tld&path=/baikal&password=admin"

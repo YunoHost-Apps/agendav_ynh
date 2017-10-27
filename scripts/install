@@ -13,6 +13,7 @@ ynh_abort_if_errors
 domain=$YNH_APP_ARG_DOMAIN
 path_url=$YNH_APP_ARG_PATH
 language=$YNH_APP_ARG_LANGUAGE
+disablecacheck=$YNH_APP_ARG_DISABLECACHECK
 
 # Set app specific variables
 app=$YNH_APP_INSTANCE_NAME
@@ -78,6 +79,12 @@ sed -i "s@{LOGDIR}@${LOGDIR}@g"              "$conf_path"
 sed -i "s@{TIMEZONE}@$(cat /etc/timezone)@g" "$conf_path"
 sed -i "s@{LANGUAGE}@${language}@g"          "$conf_path"
 
+if [ $disablecacheck -eq 0 ]; then
+	ynh_replace_string "__CACHECK__" "true" "$conf_path"
+else
+	ynh_replace_string "__CACHECK__" "false" "$conf_path"
+fi
+
 # CalDAV config
 caldav_domain=$(ynh_app_setting_get "$caldav_app" domain)
 caldav_path=$(ynh_app_setting_get "$caldav_app" path)
@@ -87,18 +94,22 @@ sed -i "s@{CALDAV_DOMAIN}@${caldav_domain}@g"                "$conf_path"
 
 ynh_system_user_create "$app"
 
+chown -R root: "$final_path"
+
 # Protect source code against modifications
-find "${final_path}" -type f -exec chown root:root {} \; -exec chmod 644 {} \;
-find "${final_path}" -type d -exec chown root:root {} \; -exec chmod 755 {} \;
+#find "${final_path}" -type f -exec chown root:root {} \; -exec chmod 644 {} \;
+#find "${final_path}" -type d -exec chown root:root {} \; -exec chmod 755 {} \;
 
 # Only agendav user should write here
-chown -hR $app: "${final_path}/web/var/cache/"{profiler,twig}
-chmod -R 750 "${final_path}/web/var/cache/"{profiler,twig}
+chown -R $app "${final_path}/web/var/cache/"{profiler,twig}
+#chmod -R 750 "${final_path}/web/var/cache/"{profiler,twig}
 
 # The agendav user should read here, but does not need to write
 # Other users should not be able to read as it stores passwords.
-find "${final_path}/web/config" -type f -exec chown root:$app {} \; -exec chmod 640 {} \;
-find "${final_path}/web/config" -type d -exec chown root:$app {} \; -exec chmod 750 {} \;
+#find "${final_path}/web/config" -type f -exec chown root:$app {} \; -exec chmod 640 {} \;
+#find "${final_path}/web/config" -type d -exec chown root:$app {} \; -exec chmod 750 {} \;
+
+chown -R $app "${final_path}/web/config/"
 
 # Create log directory
 install -m 750 -o $app -g adm -d "$LOGDIR"
