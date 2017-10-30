@@ -1,13 +1,17 @@
 #!/bin/bash
 
-# Source local helpers
-source ./_common.sh
+#=================================================
+# GENERIC START
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
 
-# Source app helpers
+source _common.sh
 source /usr/share/yunohost/helpers
 
-# Abort script if errors
-ynh_abort_if_errors
+#=================================================
+# LOAD SETTINGS
+#=================================================
 
 # Set app specific variables
 app="$YNH_APP_INSTANCE_NAME"
@@ -20,6 +24,13 @@ path_url=$(ynh_app_setting_get "$app" path)
 dbpass=$(ynh_app_setting_get "$app" mysqlpwd)
 encryptkey=$(ynh_app_setting_get "$app" encryptkey)
 language=$(ynh_app_setting_get "$app" language)
+disablecacheck=$(ynh_app_setting_get "$app" disablecacheck)
+
+LOGDIR=/var/log/$app
+
+#=================================================
+# ENSURE DOWNWARD COMPATIBILITY
+#=================================================
 
 # Set and store language
 if [[ -z "$language" ]]; then
@@ -32,11 +43,27 @@ if [[ -z "$language" ]]; then
   ynh_app_setting_set "$app" language "$language"
 fi
 
-# Define LOGDIR (create it later when user is created)
-LOGDIR=/var/log/$app
 
-# Check destination directory
-final_path=/var/www/$app
+# Fix is_public as a boolean value
+if [ "$is_public" = "Yes" ]; then
+	ynh_app_setting_set "$app" is_public 1
+	is_public=1
+elif [ "$is_public" = "No" ]; then
+	ynh_app_setting_set "$app" is_public 0
+	is_public=0
+fi
+
+# If db_name doesn't exist, create it
+if [ -z "$db_name" ]; then
+	db_name=$(ynh_sanitize_dbid "$app")
+	ynh_app_setting_set "$app" db_name "$db_name"
+fi
+
+# If final_path doesn't exist, create it
+if [ -z "$final_path" ]; then
+	final_path=/var/www/$app
+	ynh_app_setting_set "$app" final_path "$final_path"
+fi
 
 # Check whether Baïkal or Radicale is installed
 baikal_install=$(agendav_app_check_installation "baikal")
@@ -53,61 +80,146 @@ else
     ynh_die "Baikal or Radicale is mandatory"
 fi
 
+#=================================================
+# BACKUP BEFORE UPGRADE THEN ACTIVE TRAP
+#=================================================
+
+# Backup the current version of the app
+ynh_backup_before_upgrade
+ynh_clean_setup () {
+	# restore it if the upgrade fails
+	ynh_restore_upgradebackup
+}
+# Exit if an error occurs during the execution of the script
+ynh_abort_if_errors
+
+#=================================================
+# CHECK THE PATH
+#=================================================
+
+# Normalize the URL path syntax
+path_url=$(ynh_normalize_url_path "$path_url")
+
+#=================================================
+# STANDARD MODIFICATIONS
+#=================================================
+
 # Install dependencies
 ynh_install_app_dependencies php5-cli
 
+#=================================================
+# DOWNLOAD, CHECK AND UNPACK SOURCE
+#=================================================
+
 ynh_setup_source "$final_path"
 
-# Copy and set AgenDAV configuration
-conf_path="${final_path}/web/config/settings.php"
-cp ../conf/settings.php "$conf_path"
-sed -i "s/{DBUSER}/${dbuser}/g"              "$conf_path"
-sed -i "s/{DBPASS}/${dbpass}/g"              "$conf_path"
-sed -i "s/{DBNAME}/${dbname}/g"              "$conf_path"
-sed -i "s/{ENCRYPTKEY}/${encryptkey}/g"      "$conf_path"
-sed -i "s@{LOGDIR}@${LOGDIR}@g"              "$conf_path"
-sed -i "s@{TIMEZONE}@$(cat /etc/timezone)@g" "$conf_path"
-sed -i "s@{LANGUAGE}@${language}@g"          "$conf_path"
-
-# CalDAV config
-caldav_domain=$(ynh_app_setting_get "$caldav_app" domain)
-caldav_path=$(ynh_app_setting_get "$caldav_app" path)
-caldav_url="https://${caldav_domain}${caldav_path%/}"
-sed -i "s@{CALDAV_BASEURL}@${caldav_url}${caldav_baseurl}@g" "$conf_path"
-sed -i "s@{CALDAV_DOMAIN}@${caldav_domain}@g"                "$conf_path"
-
-ynh_system_user_create "$app" "$final_path"
-
-# Protect source code against modifications
-find "${final_path}" -type f -exec chown root:root {} \; -exec chmod 644 {} \;
-find "${final_path}" -type d -exec chown root:root {} \; -exec chmod 755 {} \;
-
-# Only agendav user should write here
-chown -hR $app: "${final_path}/web/var/cache/"{profiler,twig}
-chmod -R 750 "${final_path}/web/var/cache/"{profiler,twig}
-
-# The agendav user should read here, but does not need to write
-# Other users should not be able to read as it stores passwords.
-find "${final_path}/web/config" -type f -exec chown root:$app {} \; -exec chmod 640 {} \;
-find "${final_path}/web/config" -type d -exec chown root:$app {} \; -exec chmod 750 {} \;
-
-# Create log directory
-install -m 750 -o $app -g adm -d "$LOGDIR"
-
-# Run database migrations
-(
-	cd $final_path
-	php agendavcli migrations:migrate --no-interaction
-)
-
+#=================================================
+# NGINX CONFIGURATION
+#=================================================
 
 # Copy and set nginx configuration
 ynh_add_nginx_config
 
+#=================================================
+# CREATE DEDICATED USER
+#=================================================
+
+ynh_system_user_create "$app"
+
+#=================================================
+# PHP-FPM CONFIGURATION
+#================================================
+
 # Copy and set php-fpm configuration
 ynh_add_fpm_config
 
+#=================================================
+# SPECIFIC SETUP
+#=================================================
+# Create settings.php
+#=================================================
+
+# Generate random encryption key
+encryptkey=$(ynh_app_setting_get "$app" encryptkey)
+
+# Copy and set AgenDAV configuration
+timezone=$(cat /etc/timezone)
+
+caldav_domain=$(ynh_app_setting_get "$caldav_app" domain)
+caldav_path=$(ynh_app_setting_get "$caldav_app" path)
+caldav_url="https://${caldav_domain}${caldav_path%/}"
+
+conf_path="${final_path}/web/config/settings.php"
+ynh_backup_if_checksum_is_different "$conf_path"
+
+cp ../conf/settings.php "$conf_path"
+
+ynh_replace_string "{DBUSER}" "${dbuser}"         "$conf_path"
+ynh_replace_string "{DBPASS}" "${dbpass}"         "$conf_path"
+ynh_replace_string "{DBNAME}" "${dbname}"         "$conf_path"
+ynh_replace_string "{ENCRYPTKEY}" "${encryptkey}" "$conf_path"
+ynh_replace_string "{LOGDIR}" "${LOGDIR}"         "$conf_path"
+ynh_replace_string "{TIMEZONE}" "$timezone"       "$conf_path"
+ynh_replace_string "{LANGUAGE}" "${language}"     "$conf_path"
+ynh_replace_string "{CALDAV_BASEURL}" "${caldav_url}${caldav_baseurl}" "$conf_path"
+ynh_replace_string "{CALDAV_DOMAIN}" "${caldav_domain}"                "$conf_path"
+
+if [ "$disablecacheck" -eq 0 ]; then
+	ynh_replace_string "__CACHECK__" "true"  "$conf_path"
+else
+	ynh_replace_string "__CACHECK__" "false" "$conf_path"
+fi
+
+#=================================================
+# STORE THE CHECKSUM OF THE CONFIG FILE
+#=================================================
+
+ynh_store_file_checksum "$conf_path"
+
+#=================================================
+# Run database migrations (includes initialization)
+#=================================================
+
+(
+	cd "$final_path"
+	php agendavcli migrations:migrate --no-interaction
+)
+
+#=================================================
+# SETUP LOG directory
+#=================================================
+
+mkdir -p "$LOGDIR"
+chown -R "$app": "$LOGDIR"
+
+#=================================================
+# GENERIC FINALIZATION
+#=================================================
+# SECURE FILES AND DIRECTORIES
+#=================================================
+
+chown -R root: "$final_path"
+
+# Only agendav user should write here
+chown -R "$app" "${final_path}/web/var/cache/"{profiler,twig}
+
+# The agendav user should read here, but does not need to write
+chown -R root:"$app" "${final_path}/web/config/"
+chmod -R g+rx "${final_path}/web/config/"
+
+# Other users should not be able to read as it stores passwords.
+chmod -R o-rwx "${final_path}/web/config/"
+
+#=================================================
+# SETUP SSOWAT
+#=================================================
+
+# Remove the public access
 ynh_app_setting_delete "$app" skipped_uris
+
+#=================================================
+# RELOAD NGINX and FPM
+#=================================================
 
 # Reload services
 service php5-fpm restart
