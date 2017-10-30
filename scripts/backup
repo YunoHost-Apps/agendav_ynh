@@ -1,32 +1,61 @@
 #!/bin/bash
 
-# Source local helpers
-source ./_common.sh
 
-# Source app helpers
+#=================================================
+# GENERIC START
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+source _common.sh
 source /usr/share/yunohost/helpers
 
-# Abort script if errors
+#=================================================
+# MANAGE SCRIPT FAILURE
+#=================================================
+
+# Exit if an error occurs during the execution of the script
 ynh_abort_if_errors
+
+#=================================================
+# LOAD SETTINGS
+#=================================================
 
 # Set app specific variables
 app=$YNH_APP_INSTANCE_NAME
-dbname=$app
-dbuser=$app
+db_name=$app
 
 # Retrieve app settings
 domain=$(ynh_app_setting_get "$app" domain)
-path=$(ynh_app_setting_get "$app" path)
-dbpass=$(ynh_app_setting_get "$app" mysqlpwd)
+path_url=$(ynh_app_setting_get "$app" path)
+final_path=$(ynh_app_setting_get "$app" final_path)
 
-# Copy the app files
-final_path="/var/www/$app"
+#=================================================
+# STANDARD BACKUP STEPS
+#=================================================
+# BACKUP THE APP MAIN DIR
+#=================================================
+
+# Clean cache files before backup
+ynh_secure_remove "${final_path}/web/var/cache/"{profiler,twig}/*
+
 ynh_backup "$final_path"
 
-# Copy the conf files
+#=================================================
+# BACKUP THE NGINX CONFIGURATION
+#=================================================
+
 ynh_backup "/etc/nginx/conf.d/${domain}.d/${app}.conf"
+
+#=================================================
+# BACKUP THE PHP-FPM CONFIGURATION
+#=================================================
+
 ynh_backup "/etc/php5/fpm/pool.d/${app}.conf"
 
+#=================================================
+# BACKUP THE MYSQL DATABASE
+#=================================================
+
 # Dump the database
-mysqldump -u "$dbuser" -p"$dbpass" --no-create-db "$dbname" > ./dump.sql
-ynh_backup ./dump.sql
+ynh_mysql_dump_db "$db_name" > db.sql
