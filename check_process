@@ -13,7 +13,8 @@
 		setup_sub_dir=1
 		setup_root=0
 		setup_nourl=0
-		setup_private=1
+# Private test only should be fixed in package check before.
+#		setup_private=1
 		setup_public=0
 		upgrade=1
 		backup_restore=1
