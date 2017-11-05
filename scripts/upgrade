@@ -214,13 +214,12 @@ chmod -R o-rwx "${final_path}/web/config/"
 # SETUP SSOWAT
 #=================================================
 
-# Remove the public access
-ynh_app_setting_delete "$app" skipped_uris
+# Nothing to do, this app is private
 
 #=================================================
 # RELOAD NGINX and FPM
 #=================================================
 
 # Reload services
-service php5-fpm restart
+service php5-fpm reload
 service nginx reload

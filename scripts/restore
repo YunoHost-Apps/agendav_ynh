@@ -122,5 +122,5 @@ chown -R "$app": "$LOGDIR"
 # RELOAD NGINX AND PHP-FPM
 #=================================================
 
-service php5-fpm restart
+service php5-fpm reload
 service nginx reload
