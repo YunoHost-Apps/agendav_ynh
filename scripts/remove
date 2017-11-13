@@ -44,7 +44,7 @@ ynh_mysql_remove_db "$db_user" "$db_name"
 ynh_secure_remove "$final_path"
 
 #=================================================
-# REMOVE APP MAIN DIR
+# REMOVE LOG
 #=================================================
 
 ynh_secure_remove "/var/log/$app"
