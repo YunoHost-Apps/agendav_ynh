@@ -59,6 +59,12 @@ if [ -z "$db_name" ]; then
 	ynh_app_setting_set "$app" db_name "$db_name"
 fi
 
+# If disablecacheck doesn't exist, create it
+if [ -z "$disablecacheck" ]; then
+	disablecacheck=0
+	ynh_app_setting_set "$app" disablecacheck "$disablecacheck"
+fi
+
 # If final_path doesn't exist, create it
 if [ -z "$final_path" ]; then
 	final_path=/var/www/$app
