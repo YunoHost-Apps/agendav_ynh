@@ -6,6 +6,7 @@
 		language="fr"
 		disablecacheck=1
 	; pre-install
+		sudo yunohost app fetchlist
 		sudo yunohost domain add --verbose baikaldomain.tld --admin-password $PASSWORD
 		sudo yunohost app install baikal -a "domain=baikaldomain.tld&path=/baikal&password=admin"
 	; Checks
