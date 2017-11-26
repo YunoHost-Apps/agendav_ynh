@@ -1,0 +1,4 @@
+SOURCE_URL=https://github.com/adobo/agendav/releases/download/2.2.0/agendav-2.2.0.tar.gz
+SOURCE_SUM=0056154ae0a7aa3401f4f24c51f0f2de3d1e97eaa83e74a2129714b67013129f
+SOURCE_SUM_PRG=sha256sum
+SOURCE_FORMAT=tar.gz

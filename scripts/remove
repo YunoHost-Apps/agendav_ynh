@@ -1,31 +1,73 @@
 #!/bin/bash
 
-# Set app specific variables
-app="$YNH_APP_INSTANCE_NAME"
-dbname=$app
-dbuser=$app
+#=================================================
+# GENERIC START
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
 
-# Source YunoHost helpers
+source _common.sh
 source /usr/share/yunohost/helpers
 
-# Drop MySQL database and user
-ynh_mysql_drop_db "$dbname" || true
-ynh_mysql_drop_user "$dbuser" || true
+#=================================================
+# LOAD SETTINGS
+#=================================================
 
-# Retrieve domain from app settings
+app="$YNH_APP_INSTANCE_NAME"
 domain=$(ynh_app_setting_get "$app" domain)
+final_path=$(ynh_app_setting_get "$app" final_path)
 
-# Delete app directory and configurations
-sudo rm -rf "/var/www/${app}" "/var/log/${app}"
-sudo rm -f "/etc/php5/fpm/pool.d/${app}.conf"
-[[ -n $domain ]] && sudo rm -f "/etc/nginx/conf.d/${domain}.d/${app}.conf"
+db_name=$app
+db_user=$app
 
-# Reload services
-sudo service php5-fpm restart || true
-sudo service nginx reload || true
+#=================================================
+# STANDARD REMOVE
+#=================================================
+# REMOVE DEPENDENCIES
+#=================================================
+
+# Remove metapackage and its dependencies
+ynh_remove_app_dependencies
+
+#=================================================
+# REMOVE THE MYSQL DATABASE
+#=================================================
+
+# Remove a database if it exists, along with the associated user
+ynh_mysql_remove_db "$db_user" "$db_name"
+
+#=================================================
+# REMOVE APP MAIN DIR
+#=================================================
+
+# Remove the app directory securely
+ynh_secure_remove "$final_path"
+
+#=================================================
+# REMOVE LOG
+#=================================================
+
+ynh_secure_remove "/var/log/$app"
+
+#=================================================
+# REMOVE NGINX CONFIGURATION
+#=================================================
+
+# Remove the dedicated nginx config
+ynh_remove_nginx_config
+
+#=================================================
+# REMOVE PHP-FPM CONFIGURATION
+#=================================================
+
+# Remove the dedicated php-fpm config
+ynh_remove_fpm_config
+
+#=================================================
+# GENERIC FINALIZATION
+#=================================================
+# REMOVE DEDICATED USER
+#=================================================
 
 # Remove the user account
-# (must be done after php-fpm restart)
-id "$app" >/dev/null 2>&1 \
-  && sudo deluser --quiet --remove-home "$app" >/dev/null \
-  || true
+ynh_system_user_delete "$app"
