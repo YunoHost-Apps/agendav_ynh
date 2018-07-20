@@ -53,14 +53,6 @@
                     "de", "en", "es", "fr", "it", "nl"
                 ],
                 "default": "en"
-            },
-            {
-                "name": "disablecacheck",
-                "ask": {
-                    "en": "Disable certificate checks? (if not using a valid certificate)"
-                },
-                "type": "boolean",
-                "default": false
             }
         ]
     }

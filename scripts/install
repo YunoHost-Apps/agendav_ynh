@@ -23,7 +23,6 @@ ynh_abort_if_errors
 domain=$YNH_APP_ARG_DOMAIN
 path_url=$YNH_APP_ARG_PATH
 language=$YNH_APP_ARG_LANGUAGE
-disablecacheck=$YNH_APP_ARG_DISABLECACHECK
 
 # Set and store language
 language=${LANGUAGES[$language]}
@@ -75,7 +74,6 @@ fi
 ynh_app_setting_set "$app" language "$language"
 ynh_app_setting_set "$app" path "$path_url"
 ynh_app_setting_set "$app" domain "$domain"
-ynh_app_setting_set "$app" disablecacheck "$disablecacheck"
 ynh_app_setting_set "$app" final_path "$final_path"
 
 #=================================================
@@ -150,12 +148,6 @@ ynh_replace_string "{TIMEZONE}" "$timezone"       "$conf_path"
 ynh_replace_string "{LANGUAGE}" "${language}"     "$conf_path"
 ynh_replace_string "{CALDAV_BASEURL}" "${caldav_url}${caldav_baseurl}" "$conf_path"
 ynh_replace_string "{CALDAV_DOMAIN}" "${caldav_domain}"                "$conf_path"
-
-if [ "$disablecacheck" -eq 0 ]; then
-	ynh_replace_string "__CACHECK__" "true"  "$conf_path"
-else
-	ynh_replace_string "__CACHECK__" "false" "$conf_path"
-fi
 
 #=================================================
 # STORE THE CHECKSUM OF THE CONFIG FILE

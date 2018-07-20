@@ -24,7 +24,6 @@ path_url=$(ynh_app_setting_get "$app" path)
 dbpass=$(ynh_app_setting_get "$app" mysqlpwd)
 encryptkey=$(ynh_app_setting_get "$app" encryptkey)
 language=$(ynh_app_setting_get "$app" language)
-disablecacheck=$(ynh_app_setting_get "$app" disablecacheck)
 
 LOGDIR=/var/log/$app
 
@@ -57,12 +56,6 @@ fi
 if [ -z "$db_name" ]; then
 	db_name=$(ynh_sanitize_dbid "$app")
 	ynh_app_setting_set "$app" db_name "$db_name"
-fi
-
-# If disablecacheck doesn't exist, create it
-if [ -z "$disablecacheck" ]; then
-	disablecacheck=0
-	ynh_app_setting_set "$app" disablecacheck "$disablecacheck"
 fi
 
 # If final_path doesn't exist, create it
@@ -169,12 +162,6 @@ ynh_replace_string "{TIMEZONE}" "$timezone"       "$conf_path"
 ynh_replace_string "{LANGUAGE}" "${language}"     "$conf_path"
 ynh_replace_string "{CALDAV_BASEURL}" "${caldav_url}${caldav_baseurl}" "$conf_path"
 ynh_replace_string "{CALDAV_DOMAIN}" "${caldav_domain}"                "$conf_path"
-
-if [ "$disablecacheck" -eq 0 ]; then
-	ynh_replace_string "__CACHECK__" "true"  "$conf_path"
-else
-	ynh_replace_string "__CACHECK__" "false" "$conf_path"
-fi
 
 #=================================================
 # STORE THE CHECKSUM OF THE CONFIG FILE

@@ -1,0 +1,35 @@
+--- a/web/src/Controller/Authentication.php
++++ b/web/src/Controller/Authentication.php
+@@ -83,7 +83,7 @@
+      * @param Application $app
+      * @return bool false if authentication failed, true otherwise
+      */
+-    protected function processLogin($user, $password, Application $app)
++    public function processLogin($user, $password, Application $app)
+     {
+         $app['http.client']->setAuthentication($user, $password, $app['caldav.authmethod']);
+ 
+--- a/web/app/controllers.php
++++ b/web/app/controllers.php
+@@ -7,6 +7,7 @@
+ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+ use Silex\Application;
+ 
++use AgenDAV\Controller\Authentication;
+ use AgenDAV\DateHelper;
+ 
+ // Authentication
+@@ -68,6 +69,13 @@
+         return;
+     }
+ 
++    if ($request->headers->get('authorization') != null) {
++        $authController = new Authentication();
++        if ($authController->processLogin($request->headers->get('PHP_AUTH_USER'), $request->headers->get('PHP_AUTH_PW'), $app)) {
++            return;
++        }
++    }
++
+     if ($request->isXmlHttpRequest()) {
+         return new JsonResponse([], 401);
+     } else {
