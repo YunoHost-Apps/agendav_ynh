@@ -40,7 +40,7 @@ $app['caldav.baseurl'] = '{CALDAV_BASEURL}';
 $app['caldav.authmethod'] = 'basic';
 
 // Do not verify SSL certificate, it is self signed
-$app['caldav.certificate.verify'] = __CACHECK__;
+$app['caldav.certificate.verify'] = false;
 
 // Whether to show public CalDAV urls
 $app['caldav.publicurls'] = true;

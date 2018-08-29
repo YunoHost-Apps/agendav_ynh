@@ -4,18 +4,16 @@
 		domain="domain.tld"	(DOMAIN)
 		path="/path"	(PATH)
 		language="fr"
-		disablecacheck=1
 	; pre-install
 		sudo yunohost app fetchlist
-		sudo yunohost domain add --verbose baikaldomain.tld --admin-password $PASSWORD
+		sudo yunohost domain add baikaldomain.tld --admin-password $PASSWORD
 		sudo yunohost app install baikal -a "domain=baikaldomain.tld&path=/baikal&password=admin"
 	; Checks
 		pkg_linter=1
 		setup_sub_dir=1
 		setup_root=0
 		setup_nourl=0
-# Private test only should be fixed in package check before.
-#		setup_private=1
+		setup_private=1
 		setup_public=0
 		upgrade=1
 		backup_restore=1
