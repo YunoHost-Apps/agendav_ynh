@@ -1,0 +1,53 @@
+--- a/web/app/controllers.php
++++ b/web/app/controllers.php
+@@ -58,14 +58,20 @@ $controllers->before(function(Request $request, Silex\Application $app) {
+     // processing the request
+     if ($app['session']->has('username')) {
+         $username = $app['session']->get('username');
+-        $preferences = $app['preferences.repository']->userPreferences($username);
+-        $app['user.preferences'] = $preferences;
+-        $app['user.timezone'] = $preferences->get('timezone');
+-
+-        // Set application language
+-        $request->setLocale($preferences->get('language'));
+-        $app['translator']->setLocale($preferences->get('language'));
+-        return;
++        // Clear user session if HTTP authentication changed
++        if (isset($_SERVER['PHP_AUTH_USER'])
++        && $username != $_SERVER['PHP_AUTH_USER']) {
++            $app['session']->clear();
++         } else {
++                $preferences = $app['preferences.repository']->userPreferences($username);
++                $app['user.preferences'] = $preferences;
++                $app['user.timezone'] = $preferences->get('timezone');
++
++            // Set application language
++            $request->setLocale($preferences->get('language'));
++            $app['translator']->setLocale($preferences->get('language'));
++            return;
++        }
+     }
+
+     if ($request->isXmlHttpRequest()) {
+diff --git a/web/src/Controller/Authentication.php b/web/src/Controller/Authentication.php
+index deebb751..134cc9a8 100644
+--- a/web/src/Controller/Authentication.php
++++ b/web/src/Controller/Authentication.php
+@@ -34,9 +34,14 @@ class Authentication
+         $success = false;
+         $template_vars = [];
+
+-        if ($request->isMethod('POST')) {
+-            $user = $request->request->get('user');
+-            $password = $request->request->get('password');
++        if ($request->isMethod('POST') || isset($_SERVER['PHP_AUTH_USER'])) {
++            if (isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
++                $user = $_SERVER['PHP_AUTH_USER'];
++                $password = $_SERVER['PHP_AUTH_PW'];
++            } else {
++                $user = $request->request->get('user');
++                $password = $request->request->get('password');
++            }
+
+             if (empty($user) || empty($password)) {
+                 $template_vars['error'] = $app['translator']->trans('messages.error_empty_fields');

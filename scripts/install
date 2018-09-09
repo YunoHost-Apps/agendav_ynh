@@ -1,127 +1,204 @@
 #!/bin/bash
 
-set -eu
+#=================================================
+# GENERIC START
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
 
-# Retrieve arguments
-domain=$1
-path=${2%/}
-language=$3
+source _common.sh
+source /usr/share/yunohost/helpers
 
-# Source common variables and helpers
-source ./_common.sh
+#=================================================
+# MANAGE SCRIPT FAILURE
+#=================================================
+
+# Exit if an error occurs during the execution of the script
+ynh_abort_if_errors
+
+#=================================================
+# RETRIEVE ARGUMENTS FROM THE MANIFEST
+#=================================================
+
+domain=$YNH_APP_ARG_DOMAIN
+path_url=$YNH_APP_ARG_PATH
+language=$YNH_APP_ARG_LANGUAGE
+
+# Set and store language
+language=${LANGUAGES[$language]}
 
 # Set app specific variables
-app="$YNH_APP_INSTANCE_NAME"
+app=$YNH_APP_INSTANCE_NAME
 dbname=$app
 dbuser=$app
 
-# Check domain/path availability
-sudo yunohost app checkurl "${domain}${path}" -a "$app" \
-  || exit 1
+#=================================================
+# CHECK IF THE APP CAN BE INSTALLED WITH THESE ARGS
+#=================================================
 
-# Set and store language
-language=${LANGUAGES[$3]}
-ynh_app_setting_set "$app" language "$language"
+final_path=/var/www/$app
+test ! -e "$final_path" || ynh_die "This path already contains a folder"
 
 # Define LOGDIR (create it later when user is created)
 LOGDIR=/var/log/$app
+test ! -e "$LOGDIR" || ynh_die "This log path already contains a folder"
 
-# Check destination directory
-DESTDIR="/var/www/${app}"
-[[ -d "$DESTDIR" ]] && ynh_die \
-"The destination directory '${DESTDIR}' already exists.\
- You should safely delete it before installing this app."
+# Normalize the url path syntax
+path_url=$(ynh_normalize_url_path "$path_url")
+
+# Check web path availability
+ynh_webpath_available "$domain" "$path_url"
+# Register (book) web path
+ynh_webpath_register "$app" "$domain" "$path_url"
+
 
 # Check whether Baïkal or Radicale is installed
-if sudo yunohost app list --installed -f baikal | grep -q id ; then
+baikal_install=$(agendav_app_check_installation "baikal")
+radicale_install=$(agendav_app_check_installation "radicale")
+if [[ -n "$baikal_install" ]]
+then
     caldav_app="baikal"
     caldav_baseurl="/cal.php/"
-elif sudo yunohost app list --installed -f radicale | grep -q id ; then
+elif [[ -n "$radicale_install" ]]
+then
     caldav_app="radicale"
     caldav_baseurl="/"
 else
-    ynh_die "You must install Baïkal or Radicale before"
+    ynh_die "Baikal or Radicale is mandatory"
 fi
 
+#=================================================
+# STORE SETTINGS FROM MANIFEST
+#=================================================
+
+ynh_app_setting_set "$app" language "$language"
+ynh_app_setting_set "$app" path "$path_url"
+ynh_app_setting_set "$app" domain "$domain"
+ynh_app_setting_set "$app" final_path "$final_path"
+
+#=================================================
+# STANDARD MODIFICATIONS
+#=================================================
+
 # Install dependencies
-ynh_package_is_installed "php5-cli" \
-  || ynh_package_install "php5-cli"
+ynh_install_app_dependencies php5-cli
 
-# Create tmp directory and fetch app inside
-TMPDIR=$(mktemp -d)
-extract_agendav "$TMPDIR"
+#=================================================
+# CREATE A MYSQL DATABASE
+#=================================================
 
-# Generate random password and encryption key
+# Initialize database
 dbpass=$(ynh_string_random)
+
+ynh_mysql_setup_db "$dbname" "$dbuser" "$dbpass"
+
+#=================================================
+# DOWNLOAD, CHECK AND UNPACK SOURCE
+#=================================================
+
+ynh_setup_source "$final_path"
+
+#=================================================
+# NGINX CONFIGURATION
+#=================================================
+
+# Copy and set nginx configuration
+ynh_add_nginx_config
+
+#=================================================
+# CREATE DEDICATED USER
+#=================================================
+
+ynh_system_user_create "$app"
+
+#=================================================
+# PHP-FPM CONFIGURATION
+#================================================
+
+# Copy and set php-fpm configuration
+ynh_add_fpm_config
+
+#=================================================
+# SPECIFIC SETUP
+#=================================================
+# Create settings.php
+#=================================================
+
+# Generate random encryption key
 encryptkey=$(ynh_string_random 24)
+
 ynh_app_setting_set "$app" encryptkey "$encryptkey"
-ynh_app_setting_set "$app" mysqlpwd "$dbpass"
 
 # Copy and set AgenDAV configuration
-conf_path="${TMPDIR}/web/config/settings.php"
-cp ../conf/settings.php "$conf_path"
-sed -i "s/{DBUSER}/${dbuser}/g"              "$conf_path"
-sed -i "s/{DBPASS}/${dbpass}/g"              "$conf_path"
-sed -i "s/{DBNAME}/${dbname}/g"              "$conf_path"
-sed -i "s/{ENCRYPTKEY}/${encryptkey}/g"      "$conf_path"
-sed -i "s@{LOGDIR}@${LOGDIR}@g"              "$conf_path"
-sed -i "s@{TIMEZONE}@$(cat /etc/timezone)@g" "$conf_path"
-sed -i "s@{LANGUAGE}@${language}@g"          "$conf_path"
+timezone=$(cat /etc/timezone)
 
-# CalDAV config
 caldav_domain=$(ynh_app_setting_get "$caldav_app" domain)
 caldav_path=$(ynh_app_setting_get "$caldav_app" path)
 caldav_url="https://${caldav_domain}${caldav_path%/}"
-sed -i "s@{CALDAV_BASEURL}@${caldav_url}${caldav_baseurl}@g" "$conf_path"
-sed -i "s@{CALDAV_DOMAIN}@${caldav_domain}@g"                "$conf_path"
 
-# Install files and set permissions
-sudo mv "$TMPDIR" "$DESTDIR"
+conf_path="${final_path}/web/config/settings.php"
+cp ../conf/settings.php "$conf_path"
 
-sudo useradd -c "$app system account" \
-  -d /var/www/$app --system --user-group $app --shell /usr/sbin/nologin \
-  || ynh_die "Unable to create $app system account"
+ynh_replace_string "{DBUSER}" "${dbuser}"         "$conf_path"
+ynh_replace_string "{DBPASS}" "${dbpass}"         "$conf_path"
+ynh_replace_string "{DBNAME}" "${dbname}"         "$conf_path"
+ynh_replace_string "{ENCRYPTKEY}" "${encryptkey}" "$conf_path"
+ynh_replace_string "{LOGDIR}" "${LOGDIR}"         "$conf_path"
+ynh_replace_string "{TIMEZONE}" "$timezone"       "$conf_path"
+ynh_replace_string "{LANGUAGE}" "${language}"     "$conf_path"
+ynh_replace_string "{CALDAV_BASEURL}" "${caldav_url}${caldav_baseurl}" "$conf_path"
+ynh_replace_string "{CALDAV_DOMAIN}" "${caldav_domain}"                "$conf_path"
 
-# Protect source code against modifications
-sudo find "${DESTDIR}" -type f -exec chown root:root {} \; -exec chmod 644 {} \;
-sudo find "${DESTDIR}" -type d -exec chown root:root {} \; -exec chmod 755 {} \;
+#=================================================
+# STORE THE CHECKSUM OF THE CONFIG FILE
+#=================================================
+
+ynh_store_file_checksum "$conf_path"
+
+#=================================================
+# Run database migrations (includes initialization)
+#=================================================
+
+(
+	cd "$final_path"
+	php agendavcli migrations:migrate --no-interaction
+)
+
+#=================================================
+# SETUP LOG directory
+#=================================================
+
+mkdir -p "$LOGDIR"
+chown -R "$app": "$LOGDIR"
+
+#=================================================
+# GENERIC FINALIZATION
+#=================================================
+# SECURE FILES AND DIRECTORIES
+#=================================================
+
+chown -R root: "$final_path"
 
 # Only agendav user should write here
-sudo chown -hR $app: "${DESTDIR}/web/var/cache/"{profiler,twig}
-sudo chmod -R 750 "${DESTDIR}/web/var/cache/"{profiler,twig}
+chown -R "$app" "${final_path}/web/var/cache/"{profiler,twig}
 
 # The agendav user should read here, but does not need to write
+chown -R root:"$app" "${final_path}/web/config/"
+chmod -R g+rx "${final_path}/web/config/"
+
 # Other users should not be able to read as it stores passwords.
-sudo find "${DESTDIR}/web/config" -type f -exec chown root:$app {} \; -exec chmod 640 {} \;
-sudo find "${DESTDIR}/web/config" -type d -exec chown root:$app {} \; -exec chmod 750 {} \;
+chmod -R o-rwx "${final_path}/web/config/"
 
-# Create log directory
-sudo install -m 750 -o $app -g adm -d "$LOGDIR"
+#=================================================
+# SETUP SSOWAT
+#=================================================
 
-# Initialize database
-ynh_mysql_create_db "$dbname" "$dbuser" "$dbpass"
-(cd "$DESTDIR" && sudo sudo -u $app \
-    php agendavcli migrations:migrate --no-interaction) \
-  || ynh_die "Unable to create AgenDAV tables"
+# Nothing to do, this app is private
 
-# Copy and set nginx configuration
-nginx_conf="/etc/nginx/conf.d/${domain}.d/${app}.conf"
-sed -i "s@{PATH}@${path}@g"        ../conf/nginx.conf
-sed -i "s@{LOCATION}@${path:-/}@g" ../conf/nginx.conf
-sed -i "s@{DESTDIR}@${DESTDIR}@g"  ../conf/nginx.conf
-sed -i "s@{POOLNAME}@${app}@g"     ../conf/nginx.conf
-# comment redirection in case of an installation at root
-[[ -n "$path" ]] || sed -i '$s/^/#/' ../conf/nginx.conf
-sudo cp ../conf/nginx.conf "$nginx_conf"
-
-# Copy and set php-fpm configuration
-phpfpm_conf="/etc/php5/fpm/pool.d/${app}.conf"
-sed -i "s@{POOLNAME}@${app}@g"     ../conf/php-fpm.conf
-sed -i "s@{DESTDIR}@${DESTDIR}/@g" ../conf/php-fpm.conf
-sed -i "s@{USER}@${app}@g"     ../conf/php-fpm.conf
-sed -i "s@{GROUP}@${app}@g"     ../conf/php-fpm.conf
-sudo cp ../conf/php-fpm.conf "$phpfpm_conf"
+#=================================================
+# RELOAD NGINX and FPM
+#=================================================
 
 # Reload services
-sudo service php5-fpm restart
-sudo service nginx reload
+service php5-fpm reload
+service nginx reload

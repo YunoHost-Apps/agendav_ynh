@@ -1,96 +1,126 @@
 #!/bin/bash
 
-set -eu
+
+#=================================================
+# GENERIC START
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+if [ ! -e _common.sh ]; then
+	# Get the _common.sh file if it's not in the current directory
+	cp ../settings/scripts/_common.sh ./_common.sh
+	chmod a+rx _common.sh
+fi
+
+source _common.sh
+source /usr/share/yunohost/helpers
+
+#=================================================
+# MANAGE SCRIPT FAILURE
+#=================================================
+
+# Exit if an error occurs during the execution of the script
+ynh_abort_if_errors
+
+#=================================================
+# LOAD SETTINGS
+#=================================================
 
 # Set app specific variables
 app="$YNH_APP_INSTANCE_NAME"
 dbname=$app
 dbuser=$app
 
-# Source app helpers
-source /usr/share/yunohost/helpers
-
 # Retrieve old app settings
 domain=$(ynh_app_setting_get "$app" domain)
-path=$(ynh_app_setting_get "$app" path)
+path_url=$(ynh_app_setting_get "$app" path)
+final_path=$(ynh_app_setting_get "$app" final_path)
 dbpass=$(ynh_app_setting_get "$app" mysqlpwd)
 
-# Check domain/path availability
-sudo yunohost app checkurl "${domain}${path}" -a "$app" \
-  || exit 1
+LOGDIR=/var/log/$app
 
-# Check destination directory
-DESTDIR="/var/www/$app"
-[[ -d $DESTDIR ]] && ynh_die \
-"The destination directory '$DESTDIR' already exists.\
- You should safely delete it before restoring this app."
+#=================================================
+# CHECK IF THE APP CAN BE RESTORED
+#=================================================
 
-# Check configuration files
-nginx_conf="/etc/nginx/conf.d/${domain}.d/${app}.conf"
-[[ -f $nginx_conf ]] && ynh_die \
-"The NGINX configuration already exists at '${nginx_conf}'.
- You should safely delete it before restoring this app."
-phpfpm_conf="/etc/php5/fpm/pool.d/${app}.conf"
-[[ -f $phpfpm_conf ]] && ynh_die \
-"The PHP FPM configuration already exists at '${phpfpm_conf}'.
- You should safely delete it before restoring this app."
+ynh_webpath_available "$domain" "$path_url" \
+	|| ynh_die "Path not available: ${domain}${path_url}"
+test ! -d "$final_path" \
+|| ynh_die "There is already a directory: $final_path "
 
-# Check whether Baïkal or Radicale is installed
-if sudo yunohost app list --installed -f baikal | grep -q id ; then
-    caldav_app="baikal"
-    caldav_baseurl="/cal.php/"
-elif sudo yunohost app list --installed -f radicale | grep -q id ; then
-    caldav_app="radicale"
-    caldav_baseurl="/"
-else
-    ynh_die "You must install Baïkal or Radicale before"
-fi
+#=================================================
+# STANDARD RESTORATION STEPS
+#=================================================
+# RESTORE THE NGINX CONFIGURATION
+#=================================================
 
-if ! id -u $app > /dev/null 2>&1 ; then
-  sudo useradd -c "$app system account" \
-    -d /var/www/$app --system --user-group $app --shell /usr/sbin/nologin \
-    || ynh_die "Unable to create $app system account"
-fi
+# Restore configuration files
+ynh_restore_file "/etc/nginx/conf.d/${domain}.d/${app}.conf"
 
-# Restore the app files and set permissions
-sudo cp -a ./sources "$DESTDIR"
+#=================================================
+# RESTORE THE APP MAIN DIR
+#=================================================
 
-# Protect source code against modifications
-sudo chown -hR root: "$DESTDIR"
+ynh_restore_file "$final_path"
 
-# Only agendav user should write here
-sudo chown -hR $app: "${DESTDIR}/web/var/cache/"{profiler,twig}
-sudo chmod -R 750 "${DESTDIR}/web/var/cache/"{profiler,twig}
-
-# The agendav user should read here, but does not need to write
-# Other users should not be able to read as it stores passwords.
-sudo find "${DESTDIR}/web/config" -type f -exec chown root:$app {} \; -exec chmod 640 {} \;
-sudo find "${DESTDIR}/web/config" -type d -exec chown root:$app {} \; -exec chmod 750 {} \;
-
-# Clean caches
-sudo rm -rf "${DESTDIR}/web/var/cache/"{profiler,twig}/*
-
-# CalDAV config
-caldav_domain=$(ynh_app_setting_get "$caldav_app" domain)
-caldav_path=$(ynh_app_setting_get "$caldav_app" path)
-caldav_url="https://${caldav_domain}${caldav_path%/}"
-conf_path="${DESTDIR}/web/config/settings.php"
-sudo sed -i "s@^\(\$app\['caldav.baseurl'\] = \).*\
-@\1'${caldav_url}${caldav_baseurl}';@g" "$conf_path"
-sudo sed -i "s@^\(\$app\['caldav.baseurl.public'\] = \).*\
-@\1'${caldav_domain}';@g" "$conf_path"
-
-# Create log directory
-sudo install -m 750 -o www-data -g adm -d "/var/log/${app}"
+#=================================================
+# RESTORE THE MYSQL DATABASE
+#=================================================
 
 # Create and restore the database
 ynh_mysql_create_db "$dbname" "$dbuser" "$dbpass"
-ynh_mysql_connect_as "$dbuser" "$dbpass" "$dbname" < ./dump.sql
+ynh_mysql_connect_as "$dbuser" "$dbpass" "$dbname" < ./db.sql
 
-# Restore configuration files
-sudo cp -a ./nginx.conf   "$nginx_conf"
-sudo cp -a ./php-fpm.conf "$phpfpm_conf"
+#=================================================
+# RECREATE THE DEDICATED USER
+#=================================================
 
-# Reload services
-sudo service php5-fpm restart
-sudo service nginx reload
+ynh_system_user_create "$app" "$final_path"
+
+#=================================================
+# RESTORE USER RIGHTS
+#=================================================
+
+chown -R root: "$final_path"
+
+# Only agendav user should write here
+chown -R "$app" "${final_path}/web/var/cache/"{profiler,twig}
+
+# The agendav user should read here, but does not need to write
+chown -R root:"$app" "${final_path}/web/config/"
+chmod -R g+rx "${final_path}/web/config/"
+
+# Other users should not be able to read as it stores passwords.
+chmod -R o-rwx "${final_path}/web/config/"
+
+#=================================================
+# RESTORE THE PHP-FPM CONFIGURATION
+#=================================================
+
+ynh_restore_file "/etc/php5/fpm/pool.d/${app}.conf"
+
+#=================================================
+# SPECIFIC RESTORATION
+#=================================================
+# REINSTALL DEPENDENCIES
+#=================================================
+
+# Install dependencies
+ynh_install_app_dependencies php5-cli
+
+#=================================================
+# SETUP LOG directory
+#=================================================
+
+mkdir -p "$LOGDIR"
+chown -R "$app": "$LOGDIR"
+
+#=================================================
+# GENERIC FINALIZATION
+#=================================================
+# RELOAD NGINX AND PHP-FPM
+#=================================================
+
+service php5-fpm reload
+service nginx reload

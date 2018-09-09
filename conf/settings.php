@@ -39,6 +39,9 @@ $app['caldav.baseurl'] = '{CALDAV_BASEURL}';
 // Authentication method required by CalDAV server (basic or digest)
 $app['caldav.authmethod'] = 'basic';
 
+// Do not verify SSL certificate, it is self signed
+$app['caldav.certificate.verify'] = false;
+
 // Whether to show public CalDAV urls
 $app['caldav.publicurls'] = true;
 
