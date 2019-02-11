@@ -109,7 +109,7 @@ ynh_add_nginx_config
 #=================================================
 
 # Install dependencies
-ynh_install_app_dependencies php5-cli
+ynh_install_app_dependencies php-cli
 
 #=================================================
 # CREATE DEDICATED USER
