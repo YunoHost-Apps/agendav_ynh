@@ -13,12 +13,11 @@ source /usr/share/yunohost/helpers
 # LOAD SETTINGS
 #=================================================
 
-app="$YNH_APP_INSTANCE_NAME"
-domain=$(ynh_app_setting_get "$app" domain)
-final_path=$(ynh_app_setting_get "$app" final_path)
+app=$YNH_APP_INSTANCE_NAME
 
-db_name=$app
-db_user=$app
+domain=$(ynh_app_setting_get $app domain)
+db_name=$(ynh_app_setting_get $app db_name)
+final_path=$(ynh_app_setting_get $app final_path)
 
 #=================================================
 # STANDARD REMOVE
@@ -34,7 +33,7 @@ ynh_remove_app_dependencies
 #=================================================
 
 # Remove a database if it exists, along with the associated user
-ynh_mysql_remove_db "$db_user" "$db_name"
+ynh_mysql_remove_db $db_name $db_name
 
 #=================================================
 # REMOVE APP MAIN DIR
@@ -64,10 +63,17 @@ ynh_remove_nginx_config
 ynh_remove_fpm_config
 
 #=================================================
+# REMOVE LOGROTATE CONFIGURATION
+#=================================================
+
+# Remove the app-specific logrotate config
+ynh_remove_logrotate
+
+#=================================================
 # GENERIC FINALIZATION
 #=================================================
 # REMOVE DEDICATED USER
 #=================================================
 
 # Remove the user account
-ynh_system_user_delete "$app"
+ynh_system_user_delete $app

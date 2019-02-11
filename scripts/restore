@@ -7,13 +7,7 @@
 # IMPORT GENERIC HELPERS
 #=================================================
 
-if [ ! -e _common.sh ]; then
-	# Get the _common.sh file if it's not in the current directory
-	cp ../settings/scripts/_common.sh ./_common.sh
-	chmod a+rx _common.sh
-fi
-
-source _common.sh
+source ../settings/scripts/_common.sh
 source /usr/share/yunohost/helpers
 
 #=================================================
@@ -27,27 +21,21 @@ ynh_abort_if_errors
 # LOAD SETTINGS
 #=================================================
 
-# Set app specific variables
-app="$YNH_APP_INSTANCE_NAME"
-dbname=$app
-dbuser=$app
+app=$YNH_APP_INSTANCE_NAME
 
-# Retrieve old app settings
-domain=$(ynh_app_setting_get "$app" domain)
-path_url=$(ynh_app_setting_get "$app" path)
-final_path=$(ynh_app_setting_get "$app" final_path)
-dbpass=$(ynh_app_setting_get "$app" mysqlpwd)
-
-LOGDIR=/var/log/$app
+domain=$(ynh_app_setting_get $app domain)
+path_url=$(ynh_app_setting_get $app path)
+final_path=$(ynh_app_setting_get $app final_path)
+db_name=$(ynh_app_setting_get $app db_name)
 
 #=================================================
 # CHECK IF THE APP CAN BE RESTORED
 #=================================================
 
-ynh_webpath_available "$domain" "$path_url" \
+ynh_webpath_available $domain $path_url \
 	|| ynh_die "Path not available: ${domain}${path_url}"
-test ! -d "$final_path" \
-|| ynh_die "There is already a directory: $final_path "
+test ! -d $final_path \
+	|| ynh_die "There is already a directory: $final_path "
 
 #=================================================
 # STANDARD RESTORATION STEPS
@@ -55,7 +43,6 @@ test ! -d "$final_path" \
 # RESTORE THE NGINX CONFIGURATION
 #=================================================
 
-# Restore configuration files
 ynh_restore_file "/etc/nginx/conf.d/${domain}.d/${app}.conf"
 
 #=================================================
@@ -65,34 +52,25 @@ ynh_restore_file "/etc/nginx/conf.d/${domain}.d/${app}.conf"
 ynh_restore_file "$final_path"
 
 #=================================================
-# RESTORE THE MYSQL DATABASE
-#=================================================
-
-# Create and restore the database
-ynh_mysql_create_db "$dbname" "$dbuser" "$dbpass"
-ynh_mysql_connect_as "$dbuser" "$dbpass" "$dbname" < ./db.sql
-
-#=================================================
 # RECREATE THE DEDICATED USER
 #=================================================
 
-ynh_system_user_create "$app" "$final_path"
+# Create the dedicated user (if not existing)
+ynh_system_user_create $app
 
 #=================================================
 # RESTORE USER RIGHTS
 #=================================================
 
-chown -R root: "$final_path"
+chown -R root: $final_path
 
 # Only agendav user should write here
-chown -R "$app" "${final_path}/web/var/cache/"{profiler,twig}
+chown -R $app ${final_path}/web/var/cache/{profiler,twig}
 
 # The agendav user should read here, but does not need to write
-chown -R root:"$app" "${final_path}/web/config/"
-chmod -R g+rx "${final_path}/web/config/"
-
 # Other users should not be able to read as it stores passwords.
-chmod -R o-rwx "${final_path}/web/config/"
+chown -R root:$app ${final_path}/web/config/
+chmod -R 750 ${final_path}/web/config/
 
 #=================================================
 # RESTORE THE PHP-FPM CONFIGURATION
@@ -103,18 +81,22 @@ ynh_restore_file "/etc/php5/fpm/pool.d/${app}.conf"
 #=================================================
 # SPECIFIC RESTORATION
 #=================================================
-# REINSTALL DEPENDENCIES
+# RESTORE THE MYSQL DATABASE
 #=================================================
 
-# Install dependencies
-ynh_install_app_dependencies php5-cli
+db_pwd=$(ynh_app_setting_get $app mysqlpwd)
+ynh_mysql_setup_db $db_name $db_name $db_pwd
+ynh_mysql_connect_as $db_name $db_pwd $db_name < ./db.sql
 
 #=================================================
-# SETUP LOG directory
+# RESTORE THE LOGROTATE CONFIGURATION
 #=================================================
 
-mkdir -p "$LOGDIR"
-chown -R "$app": "$LOGDIR"
+logdir=/var/log/$app
+mkdir -p $logdir
+chown -R $app: $logdir
+
+ynh_restore_file "/etc/logrotate.d/$app"
 
 #=================================================
 # GENERIC FINALIZATION
@@ -122,5 +104,5 @@ chown -R "$app": "$LOGDIR"
 # RELOAD NGINX AND PHP-FPM
 #=================================================
 
-service php5-fpm reload
-service nginx reload
+systemctl reload php5-fpm
+systemctl reload nginx

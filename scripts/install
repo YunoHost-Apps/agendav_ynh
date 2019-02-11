@@ -24,13 +24,7 @@ domain=$YNH_APP_ARG_DOMAIN
 path_url=$YNH_APP_ARG_PATH
 language=$YNH_APP_ARG_LANGUAGE
 
-# Set and store language
-language=${LANGUAGES[$language]}
-
-# Set app specific variables
 app=$YNH_APP_INSTANCE_NAME
-dbname=$app
-dbuser=$app
 
 #=================================================
 # CHECK IF THE APP CAN BE INSTALLED WITH THESE ARGS
@@ -39,45 +33,44 @@ dbuser=$app
 final_path=/var/www/$app
 test ! -e "$final_path" || ynh_die "This path already contains a folder"
 
-# Define LOGDIR (create it later when user is created)
-LOGDIR=/var/log/$app
-test ! -e "$LOGDIR" || ynh_die "This log path already contains a folder"
-
 # Normalize the url path syntax
-path_url=$(ynh_normalize_url_path "$path_url")
+path_url=$(ynh_normalize_url_path $path_url)
 
-# Check web path availability
-ynh_webpath_available "$domain" "$path_url"
 # Register (book) web path
-ynh_webpath_register "$app" "$domain" "$path_url"
+ynh_webpath_register $app $domain $path_url
 
+
+agendav_app_check_installation() {
+	echo $(yunohost app list --installed -f "$1" | grep "id:")
+}
 
 # Check whether Baïkal or Radicale is installed
 baikal_install=$(agendav_app_check_installation "baikal")
 radicale_install=$(agendav_app_check_installation "radicale")
-if [[ -n "$baikal_install" ]]
+if [ -n "$baikal_install" ]
 then
-    caldav_app="baikal"
+    caldav_app=baikal
     caldav_baseurl="/cal.php/"
-elif [[ -n "$radicale_install" ]]
+elif [ -n "$radicale_install" ]
 then
-    caldav_app="radicale"
-    caldav_baseurl="/"
+    caldav_app=radicale
+    caldav_baseurl=/
 else
-    ynh_die "Baikal or Radicale is mandatory"
+    ynh_die "Please install Baikal or Radicale before AgenDAV."
 fi
 
 #=================================================
 # STORE SETTINGS FROM MANIFEST
 #=================================================
 
-ynh_app_setting_set "$app" language "$language"
-ynh_app_setting_set "$app" path "$path_url"
-ynh_app_setting_set "$app" domain "$domain"
-ynh_app_setting_set "$app" final_path "$final_path"
+ynh_app_setting_set $app domain $domain
+ynh_app_setting_set $app path $path_url
+ynh_app_setting_set $app language $language
 
 #=================================================
 # STANDARD MODIFICATIONS
+#=================================================
+# INSTALL DEPENDENCIES
 #=================================================
 
 # Install dependencies
@@ -87,15 +80,15 @@ ynh_install_app_dependencies php5-cli
 # CREATE A MYSQL DATABASE
 #=================================================
 
-# Initialize database
-dbpass=$(ynh_string_random)
-
-ynh_mysql_setup_db "$dbname" "$dbuser" "$dbpass"
+db_name=$(ynh_sanitize_dbid $app)
+ynh_app_setting_set $app db_name $db_name
+ynh_mysql_setup_db $db_name $db_name
 
 #=================================================
 # DOWNLOAD, CHECK AND UNPACK SOURCE
 #=================================================
 
+ynh_app_setting_set $app final_path $final_path
 ynh_setup_source "$final_path"
 
 #=================================================
@@ -109,7 +102,7 @@ ynh_add_nginx_config
 # CREATE DEDICATED USER
 #=================================================
 
-ynh_system_user_create "$app"
+ynh_system_user_create $app
 
 #=================================================
 # PHP-FPM CONFIGURATION
@@ -121,33 +114,35 @@ ynh_add_fpm_config
 #=================================================
 # SPECIFIC SETUP
 #=================================================
-# Create settings.php
+# CREATE SETTINGS.PHP
 #=================================================
 
 # Generate random encryption key
 encryptkey=$(ynh_string_random 24)
 
-ynh_app_setting_set "$app" encryptkey "$encryptkey"
+ynh_app_setting_set $app encryptkey "$encryptkey"
 
 # Copy and set AgenDAV configuration
 timezone=$(cat /etc/timezone)
 
-caldav_domain=$(ynh_app_setting_get "$caldav_app" domain)
-caldav_path=$(ynh_app_setting_get "$caldav_app" path)
+caldav_domain=$(ynh_app_setting_get $caldav_app domain)
+caldav_path=$(ynh_app_setting_get $caldav_app path)
 caldav_url="https://${caldav_domain}${caldav_path%/}"
 
 conf_path="${final_path}/web/config/settings.php"
 cp ../conf/settings.php "$conf_path"
 
-ynh_replace_string "{DBUSER}" "${dbuser}"         "$conf_path"
-ynh_replace_string "{DBPASS}" "${dbpass}"         "$conf_path"
-ynh_replace_string "{DBNAME}" "${dbname}"         "$conf_path"
-ynh_replace_string "{ENCRYPTKEY}" "${encryptkey}" "$conf_path"
-ynh_replace_string "{LOGDIR}" "${LOGDIR}"         "$conf_path"
-ynh_replace_string "{TIMEZONE}" "$timezone"       "$conf_path"
-ynh_replace_string "{LANGUAGE}" "${language}"     "$conf_path"
-ynh_replace_string "{CALDAV_BASEURL}" "${caldav_url}${caldav_baseurl}" "$conf_path"
-ynh_replace_string "{CALDAV_DOMAIN}" "${caldav_domain}"                "$conf_path"
+logdir=/var/log/$app
+
+ynh_replace_string "__DBUSER__" "${db_name}"         "$conf_path"
+ynh_replace_string "__DBPASS__" "${db_pwd}"         "$conf_path"
+ynh_replace_string "__DBNAME__" "${db_name}"         "$conf_path"
+ynh_replace_string "__ENCRYPTKEY__" "${encryptkey}" "$conf_path"
+ynh_replace_string "__LOGDIR__" "${logdir}"         "$conf_path"
+ynh_replace_string "__TIMEZONE__" "$timezone"       "$conf_path"
+ynh_replace_string "__LANGUAGE__" "${language}"     "$conf_path"
+ynh_replace_string "__CALDAV_BASEURL__" "${caldav_url}${caldav_baseurl}" "$conf_path"
+ynh_replace_string "__CALDAV_DOMAIN__" "${caldav_domain}"                "$conf_path"
 
 #=================================================
 # STORE THE CHECKSUM OF THE CONFIG FILE
@@ -156,20 +151,23 @@ ynh_replace_string "{CALDAV_DOMAIN}" "${caldav_domain}"                "$conf_pa
 ynh_store_file_checksum "$conf_path"
 
 #=================================================
-# Run database migrations (includes initialization)
+# RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)
 #=================================================
 
 (
-	cd "$final_path"
+	cd $final_path
 	php agendavcli migrations:migrate --no-interaction
 )
 
 #=================================================
-# SETUP LOG directory
+# SETUP LOGROTATE
 #=================================================
 
-mkdir -p "$LOGDIR"
-chown -R "$app": "$LOGDIR"
+mkdir -p $logdir
+chown -R $app: $logdir
+
+# Use logrotate to manage application logfile(s)
+ynh_use_logrotate
 
 #=================================================
 # GENERIC FINALIZATION
@@ -177,28 +175,20 @@ chown -R "$app": "$LOGDIR"
 # SECURE FILES AND DIRECTORIES
 #=================================================
 
-chown -R root: "$final_path"
+chown -R root: $final_path
 
 # Only agendav user should write here
-chown -R "$app" "${final_path}/web/var/cache/"{profiler,twig}
+chown -R $app ${final_path}/web/var/cache/{profiler,twig}
 
 # The agendav user should read here, but does not need to write
-chown -R root:"$app" "${final_path}/web/config/"
-chmod -R g+rx "${final_path}/web/config/"
-
 # Other users should not be able to read as it stores passwords.
-chmod -R o-rwx "${final_path}/web/config/"
-
-#=================================================
-# SETUP SSOWAT
-#=================================================
-
-# Nothing to do, this app is private
+chown -R root:$app ${final_path}/web/config/
+chmod -R 750 ${final_path}/web/config/
 
 #=================================================
 # RELOAD NGINX and FPM
 #=================================================
 
 # Reload services
-service php5-fpm reload
-service nginx reload
+systemctl reload php5-fpm
+systemctl reload nginx

@@ -20,21 +20,21 @@ $app['proxies'] = [];
 
 // Database settings
 $app['db.options'] = [
-        'dbname' => '{DBNAME}',
-        'user' => '{DBUSER}',
-        'password' => '{DBPASS}',
+        'dbname' => '__DBNAME__',
+        'user' => '__DBUSER__',
+        'password' => '__DBPASS__',
         'host' => 'localhost',
         'driver' => 'pdo_mysql'
 ];
 
 // CSRF secret
-$app['csrf.secret'] = '{ENCRYPTKEY}';
+$app['csrf.secret'] = '__ENCRYPTKEY__';
 
 // Log path
-$app['log.path'] = '{LOGDIR}/';
+$app['log.path'] = '__LOGDIR__/';
 
 // Base URL
-$app['caldav.baseurl'] = '{CALDAV_BASEURL}';
+$app['caldav.baseurl'] = '__CALDAV_BASEURL__';
 
 // Authentication method required by CalDAV server (basic or digest)
 $app['caldav.authmethod'] = 'basic';
@@ -46,7 +46,7 @@ $app['caldav.certificate.verify'] = false;
 $app['caldav.publicurls'] = true;
 
 // Whether to show public CalDAV urls
-$app['caldav.baseurl.public'] = 'https://{CALDAV_DOMAIN}';
+$app['caldav.baseurl.public'] = 'https://__CALDAV_DOMAIN__';
 
 // Email attribute name
 $app['principal.email.attribute'] = '{DAV:}email';
@@ -64,10 +64,10 @@ $app['calendar.sharing.permissions'] = [
 ];
 
 // Default timezone
-$app['defaults.timezone'] = '{TIMEZONE}';
+$app['defaults.timezone'] = '__TIMEZONE__';
 
-// Default languajge
-$app['defaults.language'] = '{LANGUAGE}';
+// Default language
+$app['defaults.language'] = '__LANGUAGE__';
 
 // Default time format. Options: '12' / '24'
 $app['defaults.time_format'] = '24';

@@ -7,12 +7,7 @@
 # IMPORT GENERIC HELPERS
 #=================================================
 
-if [ ! -e _common.sh ]; then
-	# Get the _common.sh file if it's not in the current directory
-	cp ../settings/scripts/_common.sh ./_common.sh
-	chmod a+rx _common.sh
-fi
-source _common.sh
+source ../settings/scripts/_common.sh
 source /usr/share/yunohost/helpers
 
 #=================================================
@@ -26,13 +21,11 @@ ynh_abort_if_errors
 # LOAD SETTINGS
 #=================================================
 
-# Set app specific variables
 app=$YNH_APP_INSTANCE_NAME
-db_name=$app
 
-# Retrieve app settings
-domain=$(ynh_app_setting_get "$app" domain)
-final_path=$(ynh_app_setting_get "$app" final_path)
+final_path=$(ynh_app_setting_get $app final_path)
+domain=$(ynh_app_setting_get $app domain)
+db_name=$(ynh_app_setting_get $app db_name)
 
 #=================================================
 # STANDARD BACKUP STEPS
@@ -41,7 +34,7 @@ final_path=$(ynh_app_setting_get "$app" final_path)
 #=================================================
 
 # Clean cache files before backup
-ynh_secure_remove "${final_path}/web/var/cache/"{profiler,twig}/*
+ynh_secure_remove ${final_path}/web/var/cache/{profiler,twig}/*
 
 ynh_backup "$final_path"
 
@@ -49,7 +42,7 @@ ynh_backup "$final_path"
 # BACKUP THE NGINX CONFIGURATION
 #=================================================
 
-ynh_backup "/etc/nginx/conf.d/${domain}.d/${app}.conf"
+ynh_backup "/etc/nginx/conf.d/$domain.d/$app.conf"
 
 #=================================================
 # BACKUP THE PHP-FPM CONFIGURATION
@@ -61,5 +54,12 @@ ynh_backup "/etc/php5/fpm/pool.d/${app}.conf"
 # BACKUP THE MYSQL DATABASE
 #=================================================
 
-# Dump the database
 ynh_mysql_dump_db "$db_name" > db.sql
+
+#=================================================
+# SPECIFIC BACKUP
+#=================================================
+# BACKUP LOGROTATE
+#=================================================
+
+ynh_backup "/etc/logrotate.d/$app"
