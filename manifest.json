@@ -8,7 +8,7 @@
     },
     "url": "http://agendav.org/",
     "license": "GPL-3.0",
-    "version": "2.0.0",
+    "version": "2.0.0~ynh1",
     "maintainer": {
         "name": "julien",
         "email": "julien.malik@paraiso.me"
@@ -19,7 +19,7 @@
     },
     "services": [
         "nginx",
-        "php5-fpm",
+        "php7.0-fpm",
         "mysql"
     ],
     "arguments": {
@@ -45,12 +45,13 @@
             },
             {
                 "name": "language",
+                "type": "string",
                 "ask": {
                     "en": "Default language to be used in AgenDAV",
                     "fr": "Langue par défaut à utiliser dans AgenDAV"
                 },
                 "choices": [
-                    "de", "en", "es", "fr", "it", "nl"
+                    "de_DE", "en", "es_ES", "fr_FR", "it_IT", "nl_NL"
                 ],
                 "default": "en"
             }
