@@ -32,9 +32,9 @@ AJAX interface to allow users to manage their own calendars and shared ones.
 
 #### Supported architectures
 
-* x86-64b - [![Build Status](https://ci-apps.yunohost.org/ci/logs/agendav%20%28Official%29.svg)](https://ci-apps.yunohost.org/ci/apps/agendav/)
-* ARMv8-A - [![Build Status](https://ci-apps-arm.yunohost.org/ci/logs/agendav%20%28Official%29.svg)](https://ci-apps-arm.yunohost.org/ci/apps/agendav/)
-* Jessie x86-64b - [![Build Status](https://ci-stretch.nohost.me/ci/logs/agendav%20%28Official%29.svg)](https://ci-stretch.nohost.me/ci/apps/agendav/)
+* x86-64b - [![Build Status](https://ci-apps.yunohost.org/ci/logs/agendav%20%28Apps%29.svg)](https://ci-apps.yunohost.org/ci/apps/agendav/)
+* ARMv8-A - [![Build Status](https://ci-apps-arm.yunohost.org/ci/logs/agendav%20%28Apps%29.svg)](https://ci-apps-arm.yunohost.org/ci/apps/agendav/)
+* Jessie x86-64b - [![Build Status](https://ci-stretch.nohost.me/ci/logs/agendav%20%28Apps%29.svg)](https://ci-stretch.nohost.me/ci/apps/agendav/)
 
 ## Limitations
 
@@ -48,6 +48,7 @@ AJAX interface to allow users to manage their own calendars and shared ones.
 
  * Report a bug: https://github.com/YunoHost-Apps/agendav_ynh/issues
  * AgenDAV website: http://agendav.org/
+ * AgenDAV repository: https://github.com/agendav/agendav/
  * YunoHost website: https://yunohost.org/
 
 ---
