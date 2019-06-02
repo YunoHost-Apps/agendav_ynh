@@ -33,7 +33,7 @@ AJAX interface to allow users to manage their own calendars and shared ones.
 #### Supported architectures
 
 * x86-64b - [![Build Status](https://ci-apps.yunohost.org/ci/logs/agendav%20%28Apps%29.svg)](https://ci-apps.yunohost.org/ci/apps/agendav/)
-* ARMv8-A - [![Build Status](https://ci-apps-arm.yunohost.org/ci/logs/agendav%20%28Apps%29.svg)](https://ci-apps-arm.yunohost.org/ci/apps/agendav/)
+* ARMv8-A - [![Build Status](https://ci-apps-arm.yunohost.org/ci/logs/agendav%20%28Apps%29%20%28&#126;ARM&#126;%29.svg)](https://ci-apps-arm.yunohost.org/ci/apps/agendav/)
 * Jessie x86-64b - [![Build Status](https://ci-stretch.nohost.me/ci/logs/agendav%20%28Apps%29.svg)](https://ci-stretch.nohost.me/ci/apps/agendav/)
 
 ## Limitations
