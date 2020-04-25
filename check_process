@@ -5,7 +5,7 @@
 		path="/path"	(PATH)
 		language="en"
 	; pre-install
-		sudo yunohost app fetchlist
+		sudo yunohost tools update --apps
 		sudo yunohost domain add baikaldomain.tld --admin-password $PASSWORD
 		sudo yunohost app install baikal -a "domain=baikaldomain.tld&path=/baikal&password=admin"
 	; Checks
