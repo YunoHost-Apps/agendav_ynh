@@ -59,7 +59,7 @@ fi
 #=================================================
 
 agendav_app_check_installation() {
-	echo $(yunohost app list --installed -f "$1" | grep "id:")
+	echo $(yunohost app list | grep "id: $1")
 }
 
 # Check whether Baïkal or Radicale is installed
