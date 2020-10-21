@@ -13,7 +13,6 @@ source /usr/share/yunohost/helpers
 # MANAGE SCRIPT FAILURE
 #=================================================
 
-# Exit if an error occurs during the execution of the script
 ynh_abort_if_errors
 
 #=================================================
@@ -53,7 +52,7 @@ then
     caldav_app=radicale
     caldav_baseurl=/
 else
-    ynh_die --message="Please install Baikal or Radicale before AgenDAV."
+    ynh_die --message="Please install Baïkal or Radicale before AgenDAV."
 fi
 
 #=================================================
@@ -86,9 +85,9 @@ ynh_setup_source --dest_dir="$final_path"
 #=================================================
 # NGINX CONFIGURATION
 #=================================================
-ynh_script_progression --message="Configuring nginx web server..." --weight=3
+ynh_script_progression --message="Configuring NGINX web server..." --weight=3
 
-# Copy and set nginx configuration
+# Copy and set NGINX configuration
 ynh_add_nginx_config
 
 #=================================================
@@ -102,9 +101,9 @@ ynh_system_user_create --username=$app
 #=================================================
 # PHP-FPM CONFIGURATION
 #================================================
-ynh_script_progression --message="Configuring php-fpm..."
+ynh_script_progression --message="Configuring PHP-FPM.."
 
-# Copy and set php-fpm configuration
+# Copy and set PHP-FPM configuration
 ynh_add_fpm_config --phpversion=$YNH_PHP_VERSION --package="$extra_php_dependencies"
 phpversion=$(ynh_app_setting_get --app=$app --key=phpversion)
 
@@ -113,7 +112,7 @@ phpversion=$(ynh_app_setting_get --app=$app --key=phpversion)
 #=================================================
 # CREATE SETTINGS.PHP
 #=================================================
-ynh_script_progression --message="Configuring agendav..." --weight=2
+ynh_script_progression --message="Configuring AgenDAV..." --weight=2
 
 # Generate random encryption key
 encryptkey=$(ynh_string_random --length=24)
@@ -151,7 +150,7 @@ ynh_store_file_checksum --file="$conf_path"
 #=================================================
 # RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)
 #=================================================
-ynh_script_progression --message="Initialising agendav..." --weight=3
+ynh_script_progression --message="Initialising AgenDAV..." --weight=3
 
 (
 	cd $final_path
@@ -188,7 +187,7 @@ chmod -R 750 ${final_path}/web/config/
 #=================================================
 # RELOAD NGINX
 #=================================================
-ynh_script_progression --message="Reloading nginx web server..."
+ynh_script_progression --message="Reloading NGINX web server..."
 
 ynh_systemd_action --service_name=nginx --action=reload
 
@@ -196,4 +195,4 @@ ynh_systemd_action --service_name=nginx --action=reload
 # END OF SCRIPT
 #=================================================
 
-ynh_script_progression --message="Installation of $app completed" --last
+ynh_script_progression --message="Installation of AgenDAV completed" --last

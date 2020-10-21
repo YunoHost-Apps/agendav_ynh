@@ -75,13 +75,13 @@ then
     caldav_app=radicale
     caldav_baseurl=/
 else
-    ynh_die --message="Please install Baikal or Radicale before AgenDAV."
+    ynh_die --message="Please install Baïkal or Radicale before AgenDAV."
 fi
 
 #=================================================
 # BACKUP BEFORE UPGRADE THEN ACTIVE TRAP
 #=================================================
-ynh_script_progression --message="Backing up the app before upgrading (may take a while)..." --weight=9
+ynh_script_progression --message="Backing up AgenDAV before upgrading (may take a while)..." --weight=9
 
 # Backup the current version of the app
 ynh_backup_before_upgrade
@@ -116,9 +116,9 @@ fi
 #=================================================
 # NGINX CONFIGURATION
 #=================================================
-ynh_script_progression --message="Upgrading nginx web server configuration..." --weight=2
+ynh_script_progression --message="Upgrading NGINX web server configuration..." --weight=2
 
-# Copy and set nginx configuration
+# Copy and set NGINX configuration
 ynh_add_nginx_config
 
 #=================================================
@@ -134,7 +134,7 @@ ynh_system_user_create --username=$app
 #=================================================
 ynh_script_progression --message="Upgrading PHP-FPM configuration..."
 
-# Create a dedicated php-fpm config
+# Create a dedicated PHP-FPM config
 ynh_add_fpm_config --phpversion=$YNH_PHP_VERSION --package="$extra_php_dependencies"
 
 #=================================================
@@ -142,7 +142,7 @@ ynh_add_fpm_config --phpversion=$YNH_PHP_VERSION --package="$extra_php_dependenc
 #=================================================
 # CREATE SETTINGS.PHP
 #=================================================
-ynh_script_progression --message="Upgrading agendav configuration..." --weight=2
+ynh_script_progression --message="Upgrading AgenDAV configuration..." --weight=2
 
 # Generate random encryption key
 encryptkey=$(ynh_app_setting_get --app=$app --key=encryptkey)
@@ -182,7 +182,7 @@ ynh_store_file_checksum --file="$conf_path"
 #=================================================
 # RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)
 #=================================================
-ynh_script_progression --message="Upgrading agendav..."
+ynh_script_progression --message="Upgrading AgenDAV..."
 
 (
 	cd $final_path
@@ -227,4 +227,4 @@ ynh_systemd_action --service_name=nginx --action=reload
 # END OF SCRIPT
 #=================================================
 
-ynh_script_progression --message="Upgrade of $app completed" --last
+ynh_script_progression --message="Upgrade of AgenDAV completed" --last
