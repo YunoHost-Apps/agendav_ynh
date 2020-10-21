@@ -66,16 +66,6 @@ ynh_app_setting_set --app=$app --key=path --value=$path_url
 ynh_app_setting_set --app=$app --key=language --value=$language
 
 #=================================================
-# STANDARD MODIFICATIONS
-#=================================================
-# INSTALL DEPENDENCIES
-#=================================================
-ynh_script_progression --message="Installing dependencies..." --weight=8
-
-# Install dependencies
-ynh_install_app_dependencies php-cli
-
-#=================================================
 # CREATE A MYSQL DATABASE
 #=================================================
 ynh_script_progression --message="Creating a MySQL database..."
@@ -115,7 +105,8 @@ ynh_system_user_create --username=$app
 ynh_script_progression --message="Configuring php-fpm..."
 
 # Copy and set php-fpm configuration
-ynh_add_fpm_config
+ynh_add_fpm_config --phpversion=$YNH_PHP_VERSION --package="$extra_php_dependencies"
+phpversion=$(ynh_app_setting_get --app=$app --key=phpversion)
 
 #=================================================
 # SPECIFIC SETUP
@@ -164,7 +155,7 @@ ynh_script_progression --message="Initialising agendav..." --weight=3
 
 (
 	cd $final_path
-	php agendavcli migrations:migrate --no-interaction
+	php${phpversion} agendavcli migrations:migrate --no-interaction
 )
 
 #=================================================
