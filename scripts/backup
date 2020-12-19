@@ -36,7 +36,7 @@ ynh_print_info --message="Declaring files to be backed up..."
 #=================================================
 # BACKUP THE APP MAIN DIR
 #=================================================
-ynh_script_progression --message="Backing up AgenDAV directory..."
+ynh_print_info --message="Backing up AgenDAV directory..."
 
 # Clean cache files before backup
 ynh_secure_remove --file=${final_path}/web/var/cache/profiler
