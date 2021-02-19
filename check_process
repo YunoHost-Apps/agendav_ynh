@@ -16,7 +16,7 @@
 		setup_private=1
 		setup_public=0
 		upgrade=1
-		upgrade=1	from_commit=1783f57896e46ed8b117f2748340c02d37b2a014
+		upgrade=1	from_commit=b1ce4c7ee4fd47a0d832eb18cfca8d6ba926ca16
 		backup_restore=1
 		multi_instance=0
 		port_already_use=0
@@ -25,6 +25,6 @@
 Email=
 Notification=none
 ;;; Upgrade options
-	; commit=1783f57896e46ed8b117f2748340c02d37b2a014
-		name= Fix installation on root - Sep 10, 2018
+	; commit=b1ce4c7ee4fd47a0d832eb18cfca8d6ba926ca16
+		name= Merge pull request #45 from YunoHost-Apps/testing-Buster support. Apr 28, 2020
 		manifest_arg=domain=DOMAIN&path=PATH&language=en&
