@@ -16,7 +16,7 @@
 		setup_private=1
 		setup_public=0
 		upgrade=1
-		upgrade=1	from_commit=b1ce4c7ee4fd47a0d832eb18cfca8d6ba926ca16
+		upgrade=1	from_commit=6fb29ddc7e32549b5587405e520d46a717e5582e
 		backup_restore=1
 		multi_instance=0
 		port_already_use=0
@@ -25,6 +25,6 @@
 Email=
 Notification=none
 ;;; Upgrade options
-	; commit=b1ce4c7ee4fd47a0d832eb18cfca8d6ba926ca16
-		name= Merge pull request #45 from YunoHost-Apps/testing-Buster support. Apr 28, 2020
+	; commit=6fb29ddc7e32549b5587405e520d46a717e5582e
+		name= --admin-password ain't needed since like 2 years or so
 		manifest_arg=domain=DOMAIN&path=PATH&language=en&
