@@ -116,7 +116,6 @@ ynh_script_progression --message="Configuring AgenDAV..." --weight=2
 
 # Generate random encryption key
 encryptkey=$(ynh_string_random --length=24)
-
 ynh_app_setting_set --app=$app --key=encryptkey --value="$encryptkey"
 
 # Copy and set AgenDAV configuration
@@ -126,26 +125,30 @@ caldav_domain=$(ynh_app_setting_get --app=$caldav_app --key=domain)
 caldav_path=$(ynh_app_setting_get --app=$caldav_app --key=path)
 caldav_url="https://${caldav_domain}${caldav_path%/}"
 
+caldav_base_url="${caldav_url}${caldav_baseurl}"
+
 conf_path="${final_path}/web/config/settings.php"
-cp ../conf/settings.php "$conf_path"
+# cp ../conf/settings.php "$conf_path"
 
 logdir=/var/log/$app
 
-ynh_replace_string --match_string="__DBUSER__" --replace_string="$db_name"        --target_file="$conf_path"
-ynh_replace_string --match_string="__DBPASS__" --replace_string="$db_pwd"         --target_file="$conf_path"
-ynh_replace_string --match_string="__DBNAME__" --replace_string="$db_name"        --target_file="$conf_path"
-ynh_replace_string --match_string="__ENCRYPTKEY__" --replace_string="$encryptkey" --target_file="$conf_path"
-ynh_replace_string --match_string="__LOGDIR__" --replace_string="$logdir"         --target_file="$conf_path"
-ynh_replace_string --match_string="__TIMEZONE__" --replace_string="$timezone"     --target_file="$conf_path"
-ynh_replace_string --match_string="__LANGUAGE__" --replace_string="$language"     --target_file="$conf_path"
-ynh_replace_string --match_string="__CALDAV_BASEURL__" --replace_string="${caldav_url}${caldav_baseurl}" --target_file="$conf_path"
-ynh_replace_string --match_string="__CALDAV_DOMAIN__" --replace_string="$caldav_domain"                  --target_file="$conf_path"
+# ynh_replace_string --match_string="__DB_USER__" --replace_string="$db_user"        --target_file="$conf_path"
+# ynh_replace_string --match_string="__DB_PWD__" --replace_string="$db_pwd"         --target_file="$conf_path"
+# ynh_replace_string --match_string="__DB_NAME__" --replace_string="$db_name"        --target_file="$conf_path"
+# ynh_replace_string --match_string="__ENCRYPTKEY__" --replace_string="$encryptkey" --target_file="$conf_path"
+# ynh_replace_string --match_string="__LOGDIR__" --replace_string="$logdir"         --target_file="$conf_path"
+# ynh_replace_string --match_string="__TIMEZONE__" --replace_string="$timezone"     --target_file="$conf_path"
+# ynh_replace_string --match_string="__LANGUAGE__" --replace_string="$language"     --target_file="$conf_path"
+# ynh_replace_string --match_string="__CALDAV_BASE_URL__" --replace_string="${caldav_url}${caldav_baseurl}" --target_file="$conf_path"
+# ynh_replace_string --match_string="__CALDAV_DOMAIN__" --replace_string="$caldav_domain"                  --target_file="$conf_path"
+
+ynh_add_config --template="../conf/settings.php" --destination="$conf_path"
 
 #=================================================
 # STORE THE CHECKSUM OF THE CONFIG FILE
 #=================================================
 
-ynh_store_file_checksum --file="$conf_path"
+# ynh_store_file_checksum --file="$conf_path"
 
 #=================================================
 # RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)

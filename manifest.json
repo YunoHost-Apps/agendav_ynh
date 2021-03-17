@@ -15,11 +15,11 @@
     },
     "multi_instance": false,
     "requirements": {
-        "yunohost": ">= 3.8.1"
+        "yunohost": ">= 4.1.7"
     },
     "services": [
         "nginx",
-        "php7.0-fpm",
+        "php7.3-fpm",
         "mysql"
     ],
     "arguments": {
@@ -27,19 +27,11 @@
             {
                 "name": "domain",
                 "type": "domain",
-                "ask": {
-                    "en": "Choose a domain for AgenDAV",
-                    "fr": "Choisissez un domaine pour AgenDAV"
-                },
                 "example": "domain.org"
             },
             {
                 "name": "path",
                 "type": "path",
-                "ask": {
-                    "en": "Choose a path for AgenDAV",
-                    "fr": "Choisissez un chemin pour AgenDAV"
-                },
                 "example": "/agendav",
                 "default": "/agendav"
             },
