@@ -21,7 +21,7 @@ $app['proxies'] = [];
 // Database settings
 $app['db.options'] = [
         'dbname' => '__DB_NAME__',
-        'user' => '__DB_USER__',
+        'user' => '__DB_NAME__',
         'password' => '__DB_PWD__',
         'host' => 'localhost',
         'driver' => 'pdo_mysql'
