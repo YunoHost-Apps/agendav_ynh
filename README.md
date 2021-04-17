@@ -1,7 +1,7 @@
 # AgenDAV for YunoHost
 
 [![Integration level](https://dash.yunohost.org/integration/agendav.svg)](https://dash.yunohost.org/appci/app/agendav) ![](https://ci-apps.yunohost.org/ci/badges/agendav.status.svg) ![](https://ci-apps.yunohost.org/ci/badges/agendav.maintain.svg)  
-[![Install AgenDAV with YunoHost](https://install-app.yunohost.org/install-with-yunohost.png)](https://install-app.yunohost.org/?app=agendav)
+[![Install AgenDAV with YunoHost](https://install-app.yunohost.org/install-with-yunohost.svg)](https://install-app.yunohost.org/?app=agendav)
 
 > *This package allow you to install AgenDAV quickly and simply on a YunoHost server.  
 If you don't have YunoHost, please see [here](https://yunohost.org/#/install) to know how to install and enjoy it.*
@@ -31,8 +31,8 @@ If you don't have YunoHost, please see [here](https://yunohost.org/#/install) to
 
 #### Supported architectures
 
-* x86-64 - [![Build Status](https://ci-apps.yunohost.org/ci/logs/agendav%20%28Apps%29.svg)](https://ci-apps.yunohost.org/ci/apps/agendav/)
-* ARMv8-A - [![Build Status](https://ci-apps-arm.yunohost.org/ci/logs/agendav%20%28Apps%29.svg)](https://ci-apps-arm.yunohost.org/ci/apps/agendav/)
+* x86-64 - [![Build Status](https://ci-apps.yunohost.org/ci/logs/agendav.svg)](https://ci-apps.yunohost.org/ci/apps/agendav/)
+* ARMv8-A - [![Build Status](https://ci-apps-arm.yunohost.org/ci/logs/agendav.svg)](https://ci-apps-arm.yunohost.org/ci/apps/agendav/)
 
 ## Limitations
 
