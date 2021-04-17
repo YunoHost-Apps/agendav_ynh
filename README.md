@@ -31,8 +31,8 @@ If you don't have YunoHost, please see [here](https://yunohost.org/#/install) to
 
 #### Supported architectures
 
-* x86-64 - [![Build Status](https://ci-apps.yunohost.org/ci/logs/agendav%20%28Apps%29.svg)](https://ci-apps.yunohost.org/ci/apps/agendav/)
-* ARMv8-A - [![Build Status](https://ci-apps-arm.yunohost.org/ci/logs/agendav%20%28Apps%29.svg)](https://ci-apps-arm.yunohost.org/ci/apps/agendav/)
+* x86-64 - [![Build Status](https://ci-apps.yunohost.org/ci/logs/agendav.svg)](https://ci-apps.yunohost.org/ci/apps/agendav/)
+* ARMv8-A - [![Build Status](https://ci-apps-arm.yunohost.org/ci/logs/agendav.svg)](https://ci-apps-arm.yunohost.org/ci/apps/agendav/)
 
 ## Limitations
 
