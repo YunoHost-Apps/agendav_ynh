@@ -1,8 +1,8 @@
 ;; Test complet
 	auto_remove=1
 	; Manifest
-		domain="domain.tld"	(DOMAIN)
-		path="/path"	(PATH)
+		domain="domain.tld"
+		path="/path"
 		language="en"
 	; pre-install
 		sudo yunohost tools update --apps
