@@ -8,14 +8,21 @@
     },
     "url": "http://agendav.org/",
     "license": "GPL-3.0",
-    "version": "2.2.0~ynh2",
+        "upstream": {
+        "license": "GPL-3.0",
+        "website": "http://agendav.org",
+        "demo": "https://demo.yunohost.org/agendav/",
+        "admindoc": "http://docs.agendav.org/en/2.2.0/",
+        "code": "https://github.com/agendav/agendav/"
+    },
+    "version": "2.2.0~ynh3",
     "maintainer": {
         "name": "julien",
         "email": "julien.malik@paraiso.me"
     },
     "multi_instance": false,
     "requirements": {
-        "yunohost": ">= 4.1.7"
+        "yunohost": ">= 4.2.4"
     },
     "services": [
         "nginx",
