@@ -116,7 +116,6 @@ ynh_script_progression --message="Configuring AgenDAV..." --weight=2
 
 # Generate random encryption key
 encryptkey=$(ynh_string_random --length=24)
-
 ynh_app_setting_set --app=$app --key=encryptkey --value="$encryptkey"
 
 # Copy and set AgenDAV configuration
