@@ -1,3 +1,5 @@
+diff --git a/web/app/controllers.php b/web/app/controllers.php
+index 08db57e3..3d186c5e 100644
 --- a/web/app/controllers.php
 +++ b/web/app/controllers.php
 @@ -58,14 +58,20 @@ $controllers->before(function(Request $request, Silex\Application $app) {
@@ -27,7 +29,7 @@
 +            return;
 +        }
      }
-
+ 
      if ($request->isXmlHttpRequest()) {
 diff --git a/web/src/Controller/Authentication.php b/web/src/Controller/Authentication.php
 index deebb751..134cc9a8 100644
@@ -36,7 +38,7 @@ index deebb751..134cc9a8 100644
 @@ -34,9 +34,14 @@ class Authentication
          $success = false;
          $template_vars = [];
-
+ 
 -        if ($request->isMethod('POST')) {
 -            $user = $request->request->get('user');
 -            $password = $request->request->get('password');
@@ -48,6 +50,6 @@ index deebb751..134cc9a8 100644
 +                $user = $request->request->get('user');
 +                $password = $request->request->get('password');
 +            }
-
+ 
              if (empty($user) || empty($password)) {
                  $template_vars['error'] = $app['translator']->trans('messages.error_empty_fields');
