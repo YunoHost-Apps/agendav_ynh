@@ -24,7 +24,7 @@ If you don't have YunoHost, please see [here](https://yunohost.org/#/install) to
 
 ## Documentation
 
- * Official documentation: http://docs.agendav.org/en/2.2.0/
+ * Official documentation: https://agendav.readthedocs.io/en/2.2.0/
  * YunoHost documentation: If specific documentation is needed, feel free to contribute.
 
 ## YunoHost specific features
