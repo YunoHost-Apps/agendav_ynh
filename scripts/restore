@@ -64,14 +64,16 @@ ynh_restore_file --origin_path="$final_path"
 # RESTORE USER RIGHTS
 #=================================================
 
-chown -R root: $final_path
+chmod 750 "$final_path"
+chmod -R o-rwx "$final_path"
+chown -R $app:www-data "$final_path"
 
-# Only agendav user should write here
+# Only AgenDav user should write here
 chown -R $app ${final_path}/web/var/cache/{profiler,twig}
 
-# The agendav user should read here, but does not need to write
+# The AgenDav user should read here, but does not need to write
 # Other users should not be able to read as it stores passwords.
-chown -R root:$app ${final_path}/web/config/
+chown -R $app ${final_path}/web/config/
 chmod -R 750 ${final_path}/web/config/
 
 #=================================================
