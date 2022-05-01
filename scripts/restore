@@ -75,6 +75,14 @@ chown -R root:$app ${final_path}/web/config/
 chmod -R 750 ${final_path}/web/config/
 
 #=================================================
+# REINSTALL DEPENDENCIES
+#=================================================
+ynh_script_progression --message="Reinstalling dependencies..." --weight=1
+
+# Define and install dependencies
+ynh_install_app_dependencies $pkg_dependencies
+
+#=================================================
 # RESTORE THE PHP-FPM CONFIGURATION
 #=================================================
 ynh_script_progression --message="Reconfiguring PHP-FPM..." --weight=6
