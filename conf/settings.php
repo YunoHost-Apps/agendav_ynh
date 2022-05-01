@@ -79,10 +79,10 @@ $app['defaults.time_format'] = '24';
  * - dmy: dd-mm-YYYY
  * - mdy: mm-dd-YYYY
  */
-$app['defaults.date_format'] = 'ymd';
+$app['defaults.date_format'] = 'dmy';
 
 // Default first day of week. Options: 0 (Sunday), 1 (Monday)
-$app['defaults.weekstart'] = 0;
+$app['defaults.weekstart'] = 1;
 
 // Logout redirection. Optional
 $main_domain = exec('cat /etc/yunohost/current_host');
