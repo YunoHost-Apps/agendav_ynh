@@ -129,7 +129,9 @@ ynh_app_setting_set --app=$app --key=encryptkey --value="$encryptkey"
 # Copy and set AgenDAV configuration
 timezone=$(cat /etc/timezone)
 
-caldav_url="https://${domain}${path%/}"
+caldav_url="https://${domain}${path%/}${caldav_baseurl}"
+
+logdir=/var/log/$app
 
 dir=__DIR__
 
@@ -153,7 +155,6 @@ ynh_script_progression --message="Initialising AgenDAV..." --weight=3
 #=================================================
 ynh_script_progression --message="Configuring log rotation..."
 
-logdir=/var/log/$app
 mkdir -p $logdir
 chown -R $app: $logdir
 
