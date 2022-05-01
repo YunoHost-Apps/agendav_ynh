@@ -136,6 +136,7 @@ ynh_script_progression --message="Upgrading AgenDAV..."
 (
 	cd $final_path
 	php${phpversion} agendavcli migrations:migrate --no-interaction
+	php${phpversion} agendavcli sessions:clear
 )
 
 #=================================================
