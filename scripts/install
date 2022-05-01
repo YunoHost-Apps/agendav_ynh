@@ -178,7 +178,6 @@ chown -R $app ${final_path}/web/var/cache/{profiler,twig}
 chown -R $app ${final_path}/web/config/
 chmod -R 750 ${final_path}/web/config/
 
-
 #=================================================
 # RELOAD NGINX
 #=================================================
