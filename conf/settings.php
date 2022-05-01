@@ -20,9 +20,9 @@ $app['proxies'] = [];
 
 // Database settings
 $app['db.options'] = [
-        'dbname' => '__DBNAME__',
-        'user' => '__DBUSER__',
-        'password' => '__DBPASS__',
+        'dbname' => '__DB_NAME__',
+        'user' => '__DB_USER__',
+        'password' => '__DB_PWD__',
         'host' => 'localhost',
         'driver' => 'pdo_mysql'
 ];
@@ -34,7 +34,7 @@ $app['csrf.secret'] = '__ENCRYPTKEY__';
 $app['log.path'] = '__LOGDIR__/';
 
 // Base URL
-$app['caldav.baseurl'] = '__CALDAV_BASEURL__';
+$app['caldav.baseurl'] = '__CALDAV_URL__';
 
 // Authentication method required by CalDAV server (basic or digest)
 $app['caldav.authmethod'] = 'basic';
@@ -46,7 +46,7 @@ $app['caldav.certificate.verify'] = false;
 $app['caldav.publicurls'] = true;
 
 // Whether to show public CalDAV urls
-$app['caldav.baseurl.public'] = 'https://__CALDAV_DOMAIN__';
+$app['caldav.baseurl.public'] = 'https://__DOMAIN__';
 
 // Email attribute name
 $app['principal.email.attribute'] = '{DAV:}email';
