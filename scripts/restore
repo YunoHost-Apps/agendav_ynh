@@ -60,14 +60,14 @@ chmod 750 "$final_path"
 chmod -R o-rwx "$final_path"
 chown -R $app:www-data "$final_path"
 
-chown -R root: $final_path
+chown -R $app:www-data $final_path
 
 # Only agendav user should write here
 chown -R $app ${final_path}/web/var/cache/{profiler,twig}
 
 # The agendav user should read here, but does not need to write
 # Other users should not be able to read as it stores passwords.
-chown -R root:$app ${final_path}/web/config/
+chown -R $app:www-data ${final_path}/web/config/
 chmod -R 750 ${final_path}/web/config/
 
 #=================================================

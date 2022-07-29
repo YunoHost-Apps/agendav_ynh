@@ -70,6 +70,8 @@ ynh_app_setting_set --app=$app --key=path --value=$path_url
 ynh_app_setting_set --app=$app --key=language --value=$language
 
 #=================================================
+# STANDARD MODIFICATIONS
+#=================================================
 # INSTALL DEPENDENCIES
 #=================================================
 ynh_script_progression --message="Installing dependencies..."
@@ -102,6 +104,10 @@ ynh_script_progression --message="Setting up source files..." --weight=4
 ynh_app_setting_set --app=$app --key=final_path --value=$final_path
 # Download, check integrity, uncompress and patch the source from app.src
 ynh_setup_source --dest_dir="$final_path"
+
+chmod 750 "$final_path"
+chmod -R o-rwx "$final_path"
+chown -R $app:www-data "$final_path"
 
 #=================================================
 # PHP-FPM CONFIGURATION
@@ -169,14 +175,14 @@ ynh_script_progression --message="Initialising AgenDAV..." --weight=3
 # SECURE FILES AND DIRECTORIES
 #=================================================
 
-chown -R root: $final_path
+chown -R $app:www-data $final_path
 
 # Only agendav user should write here
 chown -R $app ${final_path}/web/var/cache/{profiler,twig}
 
 # The agendav user should read here, but does not need to write
 # Other users should not be able to read as it stores passwords.
-chown -R root:$app ${final_path}/web/config/
+chown -R $app:www-data ${final_path}/web/config/
 chmod -R 750 ${final_path}/web/config/
 
 #=================================================
