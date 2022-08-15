@@ -20,6 +20,7 @@ If you don't have YunoHost, please consult [the guide](https://yunohost.org/#/in
 
 **Shipped version:** 2.2.0~ynh3
 
+
 **Demo:** https://demo.yunohost.org/agendav/
 ## Documentation and resources
 
