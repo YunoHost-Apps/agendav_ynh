@@ -26,6 +26,8 @@ language=$YNH_APP_ARG_LANGUAGE
 
 app=$YNH_APP_INSTANCE_NAME
 
+encryptkey=$(ynh_string_random --length=24)
+
 #=================================================
 # CHECK IF THE APP CAN BE INSTALLED WITH THESE ARGS
 #=================================================
@@ -68,6 +70,7 @@ ynh_script_progression --message="Storing installation settings..." --weight=2
 ynh_app_setting_set --app=$app --key=domain --value=$domain
 ynh_app_setting_set --app=$app --key=path --value=$path_url
 ynh_app_setting_set --app=$app --key=language --value=$language
+ynh_app_setting_set --app=$app --key=encryptkey --value="$encryptkey"
 
 #=================================================
 # STANDARD MODIFICATIONS
@@ -144,23 +147,12 @@ timezone=$(cat /etc/timezone)
 caldav_domain=$(ynh_app_setting_get --app=$caldav_app --key=domain)
 caldav_path=$(ynh_app_setting_get --app=$caldav_app --key=path)
 caldav_url="https://${caldav_domain}${caldav_path%/}"
+caldav_baseurl="${caldav_url}${caldav_baseurl}"
 
-conf_path="${final_path}/web/config/settings.php"
-cp ../conf/settings.php "$conf_path"
+dir=dir
+ynh_add_config --template="../conf/settings.php" --destination="${final_path}/web/config/settings.php"
 
-logdir=/var/log/$app
-
-ynh_replace_string --match_string="__DBUSER__" --replace_string="$db_name"        --target_file="$conf_path"
-ynh_replace_string --match_string="__DBPASS__" --replace_string="$db_pwd"         --target_file="$conf_path"
-ynh_replace_string --match_string="__DBNAME__" --replace_string="$db_name"        --target_file="$conf_path"
-ynh_replace_string --match_string="__ENCRYPTKEY__" --replace_string="$encryptkey" --target_file="$conf_path"
-ynh_replace_string --match_string="__LOGDIR__" --replace_string="$logdir"         --target_file="$conf_path"
-ynh_replace_string --match_string="__TIMEZONE__" --replace_string="$timezone"     --target_file="$conf_path"
-ynh_replace_string --match_string="__LANGUAGE__" --replace_string="$language"     --target_file="$conf_path"
-ynh_replace_string --match_string="__CALDAV_BASEURL__" --replace_string="${caldav_url}${caldav_baseurl}" --target_file="$conf_path"
-ynh_replace_string --match_string="__CALDAV_DOMAIN__" --replace_string="$caldav_domain"                  --target_file="$conf_path"
-
-ynh_store_file_checksum --file="$conf_path"
+ynh_store_file_checksum --file="${final_path}/web/config/settings.php"
 
 #=================================================
 # RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)
@@ -193,8 +185,8 @@ chmod -R 750 ${final_path}/web/config/
 #=================================================
 ynh_script_progression --message="Configuring log rotation..."
 
-mkdir -p $logdir
-chown -R $app: $logdir
+mkdir -p /var/log/$app
+chown -R $app: /var/log/$app
 
 # Use logrotate to manage application logfile(s)
 ynh_use_logrotate

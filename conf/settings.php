@@ -20,9 +20,9 @@ $app['proxies'] = [];
 
 // Database settings
 $app['db.options'] = [
-        'dbname' => '__DBNAME__',
-        'user' => '__DBUSER__',
-        'password' => '__DBPASS__',
+        'dbname' => '__DB_NAME__',
+        'user' => '__DB_USER__',
+        'password' => '__DB_PWD__',
         'host' => 'localhost',
         'driver' => 'pdo_mysql'
 ];
@@ -31,7 +31,7 @@ $app['db.options'] = [
 $app['csrf.secret'] = '__ENCRYPTKEY__';
 
 // Log path
-$app['log.path'] = '__LOGDIR__/';
+$app['log.path'] = '/var/log/__APP__/';
 
 // Base URL
 $app['caldav.baseurl'] = '__CALDAV_BASEURL__';
