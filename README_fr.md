@@ -25,7 +25,7 @@ Si vous n'avez pas YunoHost, regardez [ici](https://yunohost.org/#/install) pour
 ## Documentations et ressources
 
 * Site officiel de l'app : <http://agendav.org>
-* Documentation officielle de l'admin : <http://docs.agendav.org>
+* Documentation officielle de l'admin : <https://agendav.readthedocs.io/>
 * Dépôt de code officiel de l'app : <https://github.com/agendav/agendav>
 * Documentation YunoHost pour cette app : <https://yunohost.org/app_agendav>
 * Signaler un bug : <https://github.com/YunoHost-Apps/agendav_ynh/issues>
