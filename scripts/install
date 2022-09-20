@@ -13,6 +13,9 @@ source /usr/share/yunohost/helpers
 # MANAGE SCRIPT FAILURE
 #=================================================
 
+ynh_clean_setup () {
+	true
+}
 # Exit if an error occurs during the execution of the script
 ynh_abort_if_errors
 
@@ -29,7 +32,7 @@ app=$YNH_APP_INSTANCE_NAME
 #=================================================
 # CHECK IF THE APP CAN BE INSTALLED WITH THESE ARGS
 #=================================================
-ynh_script_progression --message="Validating installation parameters..."
+ynh_script_progression --message="Validating installation parameters..." --weight=1
 
 final_path=/var/www/$app
 test ! -e "$final_path" || ynh_die --message="This path already contains a folder"
@@ -74,7 +77,7 @@ ynh_app_setting_set --app=$app --key=language --value=$language
 #=================================================
 # INSTALL DEPENDENCIES
 #=================================================
-ynh_script_progression --message="Installing dependencies..."
+ynh_script_progression --message="Installing dependencies..." --weight=1
 
 ynh_install_app_dependencies $pkg_dependencies
 
@@ -89,7 +92,7 @@ ynh_system_user_create --username=$app --home_dir="$final_path"
 #=================================================
 # CREATE A MYSQL DATABASE
 #=================================================
-ynh_script_progression --message="Creating a MySQL database..."
+ynh_script_progression --message="Creating a MySQL database..." --weight=1
 
 db_name=$(ynh_sanitize_dbid --db_name=$app)
 db_user=$db_name
@@ -112,7 +115,7 @@ chown -R $app:www-data "$final_path"
 #=================================================
 # PHP-FPM CONFIGURATION
 #=================================================
-ynh_script_progression --message="Configuring PHP-FPM..."
+ynh_script_progression --message="Configuring PHP-FPM..." --weight=1
 
 # Create a dedicated PHP-FPM config
 ynh_add_fpm_config
@@ -144,23 +147,9 @@ timezone=$(cat /etc/timezone)
 caldav_domain=$(ynh_app_setting_get --app=$caldav_app --key=domain)
 caldav_path=$(ynh_app_setting_get --app=$caldav_app --key=path)
 caldav_url="https://${caldav_domain}${caldav_path%/}"
+caldav_baseurl="${caldav_url}${caldav_baseurl}"
 
-conf_path="${final_path}/web/config/settings.php"
-cp ../conf/settings.php "$conf_path"
-
-logdir=/var/log/$app
-
-ynh_replace_string --match_string="__DBUSER__" --replace_string="$db_name"        --target_file="$conf_path"
-ynh_replace_string --match_string="__DBPASS__" --replace_string="$db_pwd"         --target_file="$conf_path"
-ynh_replace_string --match_string="__DBNAME__" --replace_string="$db_name"        --target_file="$conf_path"
-ynh_replace_string --match_string="__ENCRYPTKEY__" --replace_string="$encryptkey" --target_file="$conf_path"
-ynh_replace_string --match_string="__LOGDIR__" --replace_string="$logdir"         --target_file="$conf_path"
-ynh_replace_string --match_string="__TIMEZONE__" --replace_string="$timezone"     --target_file="$conf_path"
-ynh_replace_string --match_string="__LANGUAGE__" --replace_string="$language"     --target_file="$conf_path"
-ynh_replace_string --match_string="__CALDAV_BASEURL__" --replace_string="${caldav_url}${caldav_baseurl}" --target_file="$conf_path"
-ynh_replace_string --match_string="__CALDAV_DOMAIN__" --replace_string="$caldav_domain"                  --target_file="$conf_path"
-
-ynh_store_file_checksum --file="$conf_path"
+ynh_add_config --template="../conf/settings.php" --destination="${final_path}/web/config/settings.php"
 
 #=================================================
 # RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)
@@ -171,10 +160,6 @@ ynh_script_progression --message="Initialising AgenDAV..." --weight=3
 	cd $final_path
 	php${phpversion} agendavcli migrations:migrate --no-interaction
 )
-
-#=================================================
-# SECURE FILES AND DIRECTORIES
-#=================================================
 
 chown -R $app:www-data $final_path
 
@@ -191,10 +176,10 @@ chmod -R 750 ${final_path}/web/config/
 #=================================================
 # SETUP LOGROTATE
 #=================================================
-ynh_script_progression --message="Configuring log rotation..."
+ynh_script_progression --message="Configuring log rotation..." --weight=1
 
-mkdir -p $logdir
-chown -R $app: $logdir
+mkdir -p /var/log/$app
+chown -R $app: /var/log/$app
 
 # Use logrotate to manage application logfile(s)
 ynh_use_logrotate
@@ -202,7 +187,7 @@ ynh_use_logrotate
 #=================================================
 # RELOAD NGINX
 #=================================================
-ynh_script_progression --message="Reloading NGINX web server..."
+ynh_script_progression --message="Reloading NGINX web server..." --weight=1
 
 ynh_systemd_action --service_name=nginx --action=reload
 
@@ -210,4 +195,4 @@ ynh_systemd_action --service_name=nginx --action=reload
 # END OF SCRIPT
 #=================================================
 
-ynh_script_progression --message="Installation of AgenDAV completed" --last
+ynh_script_progression --message="Installation of $app completed" --last

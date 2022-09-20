@@ -12,7 +12,7 @@
         "license": "GPL-3.0",
         "website": "http://agendav.org",
         "demo": "https://demo.yunohost.org/agendav/",
-        "admindoc": "http://docs.agendav.org",
+        "admindoc": "https://agendav.readthedocs.io/",
         "code": "https://github.com/agendav/agendav"
     },
     "license": "GPL-3.0",
