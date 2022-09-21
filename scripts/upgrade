@@ -12,7 +12,7 @@ source /usr/share/yunohost/helpers
 #=================================================
 # LOAD SETTINGS
 #=================================================
-ynh_script_progression --message="Loading installation settings..."
+ynh_script_progression --message="Loading installation settings..." --weight=1
 
 app=$YNH_APP_INSTANCE_NAME
 
@@ -21,12 +21,14 @@ path_url=$(ynh_app_setting_get --app=$app --key=path)
 language=$(ynh_app_setting_get --app=$app --key=language)
 final_path=$(ynh_app_setting_get --app=$app --key=final_path)
 db_name=$(ynh_app_setting_get --app=$app --key=db_name)
+db_user=$db_name
+db_pwd=$(ynh_app_setting_get --app=$app --key=mysqlpwd)
 phpversion=$(ynh_app_setting_get --app=$app --key=phpversion)
 
 #=================================================
 # CHECK VERSION
 #=================================================
-ynh_script_progression --message="Checking version..."
+ynh_script_progression --message="Checking version..." --weight=1
 
 upgrade_type=$(ynh_check_app_version_changed)
 
@@ -49,7 +51,7 @@ ynh_abort_if_errors
 #=================================================
 # ENSURE DOWNWARD COMPATIBILITY
 #=================================================
-ynh_script_progression --message="Ensuring downward compatibility..."
+ynh_script_progression --message="Ensuring downward compatibility..." --weight=1
 
 # If db_name doesn't exist, create it
 if [ -z "$db_name" ]; then
@@ -69,14 +71,6 @@ if ynh_legacy_permissions_exists; then
 
 	ynh_app_setting_delete --app=$app --key=is_public
 fi
-
-#=================================================
-# CREATE DEDICATED USER
-#=================================================
-ynh_script_progression --message="Making sure dedicated system user exists..."
-
-# Create a dedicated user (if not existing)
-ynh_system_user_create --username=$app --home_dir="$final_path"
 
 #=================================================
 # GET THE CALDAV APP
@@ -102,15 +96,23 @@ else
 fi
 
 #=================================================
+# CREATE DEDICATED USER
+#=================================================
+ynh_script_progression --message="Making sure dedicated system user exists..." --weight=1
+
+# Create a dedicated user (if not existing)
+ynh_system_user_create --username=$app --home_dir="$final_path"
+
+#=================================================
 # DOWNLOAD, CHECK AND UNPACK SOURCE
 #=================================================
 
 if [ "$upgrade_type" == "UPGRADE_APP" ]
 then
-	ynh_script_progression --message="Upgrading source files..."
+	ynh_script_progression --message="Upgrading source files..." --weight=1
 
 	# Download, check integrity, uncompress and patch the source from app.src
-	ynh_setup_source --dest_dir="$final_path"
+	ynh_setup_source --dest_dir="$final_path"--keep="web/config/settings.php"
 fi
 
 chmod 750 "$final_path"
@@ -120,14 +122,14 @@ chown -R $app:www-data "$final_path"
 #=================================================
 # UPGRADE DEPENDENCIES
 #=================================================
-ynh_script_progression --message="Upgrading dependencies..."
+ynh_script_progression --message="Upgrading dependencies..." --weight=1
 
 ynh_install_app_dependencies $pkg_dependencies
 
 #=================================================
 # PHP-FPM CONFIGURATION
 #=================================================
-ynh_script_progression --message="Upgrading PHP-FPM configuration..."
+ynh_script_progression --message="Upgrading PHP-FPM configuration..." --weight=1
 
 # Create a dedicated PHP-FPM config
 ynh_add_fpm_config
@@ -135,7 +137,7 @@ ynh_add_fpm_config
 #=================================================
 # NGINX CONFIGURATION
 #=================================================
-ynh_script_progression --message="Upgrading NGINX web server configuration..."
+ynh_script_progression --message="Upgrading NGINX web server configuration..." --weight=1
 
 # Create a dedicated NGINX config
 ynh_add_nginx_config
@@ -157,41 +159,19 @@ timezone=$(cat /etc/timezone)
 caldav_domain=$(ynh_app_setting_get --app=$caldav_app --key=domain)
 caldav_path=$(ynh_app_setting_get --app=$caldav_app --key=path)
 caldav_url="https://${caldav_domain}${caldav_path%/}"
+caldav_baseurl="${caldav_url}${caldav_baseurl}"
 
-conf_path="${final_path}/web/config/settings.php"
-
-ynh_backup_if_checksum_is_different --file="$conf_path"
-
-cp ../conf/settings.php "$conf_path"
-
-logdir=/var/log/$app
-
-ynh_replace_string --match_string="__DBUSER__" --replace_string="$db_name"        --target_file="$conf_path"
-db_pwd=$(ynh_app_setting_get --app=$app --key=mysqlpwd)
-ynh_replace_string --match_string="__DBPASS__" --replace_string="$db_pwd"         --target_file="$conf_path"
-ynh_replace_string --match_string="__DBNAME__" --replace_string="$db_name"        --target_file="$conf_path"
-ynh_replace_string --match_string="__ENCRYPTKEY__" --replace_string="$encryptkey" --target_file="$conf_path"
-ynh_replace_string --match_string="__LOGDIR__" --replace_string="$logdir"         --target_file="$conf_path"
-ynh_replace_string --match_string="__TIMEZONE__" --replace_string="$timezone"     --target_file="$conf_path"
-ynh_replace_string --match_string="__LANGUAGE__" --replace_string="$language"     --target_file="$conf_path"
-ynh_replace_string --match_string="__CALDAV_BASEURL__" --replace_string="${caldav_url}${caldav_baseurl}" --target_file="$conf_path"
-ynh_replace_string --match_string="__CALDAV_DOMAIN__" --replace_string="$caldav_domain"                  --target_file="$conf_path"
-
-ynh_store_file_checksum --file="$conf_path"
+ynh_add_config --template="../conf/settings.php" --destination="${final_path}/web/config/settings.php"
 
 #=================================================
 # RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)
 #=================================================
-ynh_script_progression --message="Upgrading AgenDAV..."
+ynh_script_progression --message="Upgrading AgenDAV..." --weight=1
 
 (
 	cd $final_path
 	php${phpversion} agendavcli migrations:migrate --no-interaction
 )
-
-#=================================================
-# SECURE FILES AND DIRECTORIES
-#=================================================
 
 chown -R $app:www-data $final_path
 
@@ -210,8 +190,8 @@ chmod -R 750 ${final_path}/web/config/
 #=================================================
 ynh_script_progression --message="Upgrading logrotate configuration..." --weight=2
 
-mkdir -p $logdir
-chown -R $app: $logdir
+mkdir -p /var/log/$app
+chown -R $app: /var/log/$app
 
 # Use logrotate to manage application logfile(s)
 ynh_use_logrotate --non-append
@@ -219,7 +199,7 @@ ynh_use_logrotate --non-append
 #=================================================
 # RELOAD NGINX
 #=================================================
-ynh_script_progression --message="Reloading NGINX web server..."
+ynh_script_progression --message="Reloading NGINX web server..." --weight=1
 
 ynh_systemd_action --service_name=nginx --action=reload
 

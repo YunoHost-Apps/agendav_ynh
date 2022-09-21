@@ -18,14 +18,14 @@ Si vous n'avez pas YunoHost, regardez [ici](https://yunohost.org/#/install) pour
 [AgenDAV](http://agendav.org/) is a CalDAV web client which features an AJAX interface to allow users to manage their own calendars and shared ones.
 
 
-**Version incluse :** 2.2.0~ynh3
+**Version incluse :** 2.5.0~ynh1
 
 
 **Démo :** https://demo.yunohost.org/agendav/
 ## Documentations et ressources
 
 * Site officiel de l'app : <http://agendav.org>
-* Documentation officielle de l'admin : <http://docs.agendav.org>
+* Documentation officielle de l'admin : <https://agendav.readthedocs.io/>
 * Dépôt de code officiel de l'app : <https://github.com/agendav/agendav>
 * Documentation YunoHost pour cette app : <https://yunohost.org/app_agendav>
 * Signaler un bug : <https://github.com/YunoHost-Apps/agendav_ynh/issues>
