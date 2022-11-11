@@ -1,5 +1,5 @@
-SOURCE_URL=https://github.com/agendav/agendav/releases/download/2.5.0/agendav-2.5.0.tar.gz
-SOURCE_SUM=b0c4c12fdc4272de3e0296403eeea0e5b22af1e83ab6becf7a1eb0eea9e9f48e
+SOURCE_URL=https://github.com/agendav/agendav/releases/download/2.6.0/agendav-2.6.0.tar.gz
+SOURCE_SUM=af72c07886e30d2443ce9587992f59c78fad5ab4a069e311286e1e7216db895e
 SOURCE_SUM_PRG=sha256sum
 SOURCE_FORMAT=tar.gz
 SOURCE_IN_SUBDIR=true
