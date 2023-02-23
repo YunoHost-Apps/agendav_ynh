@@ -6,6 +6,7 @@ It shall NOT be edited by hand.
 # AgenDAV pour YunoHost
 
 [![Niveau d’intégration](https://dash.yunohost.org/integration/agendav.svg)](https://dash.yunohost.org/appci/app/agendav) ![Statut du fonctionnement](https://ci-apps.yunohost.org/ci/badges/agendav.status.svg) ![Statut de maintenance](https://ci-apps.yunohost.org/ci/badges/agendav.maintain.svg)
+
 [![Installer AgenDAV avec YunoHost](https://install-app.yunohost.org/install-with-yunohost.svg)](https://install-app.yunohost.org/?app=agendav)
 
 *[Read this readme in english.](./README.md)*
