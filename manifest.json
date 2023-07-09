@@ -6,7 +6,7 @@
         "en": "CalDAV web client",
         "fr": "Client web pour CalDAV"
     },
-    "version": "2.6.0~ynh1",
+    "version": "2.6.0~ynh2",
     "url": "http://agendav.org",
     "upstream": {
         "license": "GPL-3.0",
