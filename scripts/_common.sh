@@ -4,7 +4,7 @@
 # COMMON VARIABLES
 #=================================================
 
-YNH_PHP_VERSION="8.1"
+YNH_PHP_VERSION="7.4"
 
 php_dependencies="php$YNH_PHP_VERSION-ctype php$YNH_PHP_VERSION-curl php$YNH_PHP_VERSION-mbstring php$YNH_PHP_VERSION-mcrypt php$YNH_PHP_VERSION-tokenizer php$YNH_PHP_VERSION-xml php$YNH_PHP_VERSION-xmlreader php$YNH_PHP_VERSION-xmlwriter php$YNH_PHP_VERSION-mysql"
 
