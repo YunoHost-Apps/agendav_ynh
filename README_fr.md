@@ -19,7 +19,7 @@ Si vous n’avez pas YunoHost, regardez [ici](https://yunohost.org/#/install) po
 [AgenDAV](http://agendav.org/) is a CalDAV web client which features an AJAX interface to allow users to manage their own calendars and shared ones.
 
 
-**Version incluse :** 2.6.0~ynh1
+**Version incluse :** 2.6.0~ynh2
 
 **Démo :** https://demo.yunohost.org/agendav/
 ## Documentations et ressources
