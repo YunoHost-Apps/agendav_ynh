@@ -10,41 +10,11 @@ source _common.sh
 source /usr/share/yunohost/helpers
 
 #=================================================
-# LOAD SETTINGS
-#=================================================
-ynh_script_progression --message="Loading installation settings..." --weight=1
-
-app=$YNH_APP_INSTANCE_NAME
-
-domain=$(ynh_app_setting_get --app=$app --key=domain)
-path_url=$(ynh_app_setting_get --app=$app --key=path)
-language=$(ynh_app_setting_get --app=$app --key=language)
-final_path=$(ynh_app_setting_get --app=$app --key=final_path)
-db_name=$(ynh_app_setting_get --app=$app --key=db_name)
-db_user=$db_name
-db_pwd=$(ynh_app_setting_get --app=$app --key=mysqlpwd)
-phpversion=$(ynh_app_setting_get --app=$app --key=phpversion)
-
-#=================================================
 # CHECK VERSION
 #=================================================
 ynh_script_progression --message="Checking version..." --weight=1
 
 upgrade_type=$(ynh_check_app_version_changed)
-
-#=================================================
-# BACKUP BEFORE UPGRADE THEN ACTIVE TRAP
-#=================================================
-ynh_script_progression --message="Backing up the app before upgrading (may take a while)..." --weight=9
-
-# Backup the current version of the app
-ynh_backup_before_upgrade
-ynh_clean_setup () {
-	# Restore it if the upgrade fails
-	ynh_restore_upgradebackup
-}
-# Exit if an error occurs during the execution of the script
-ynh_abort_if_errors
 
 #=================================================
 # STANDARD UPGRADE STEPS
@@ -53,55 +23,13 @@ ynh_abort_if_errors
 #=================================================
 ynh_script_progression --message="Ensuring downward compatibility..." --weight=1
 
-# If db_name doesn't exist, create it
-if [ -z "$db_name" ]; then
-	db_name=$(ynh_sanitize_dbid --db_name=$app)
-	ynh_app_setting_set --app=$app --key=db_name --value=$db_name
-fi
-
-# If final_path doesn't exist, create it
-if [ -z "$final_path" ]; then
-	final_path=/var/www/$app
-	ynh_app_setting_set --app=$app --key=final_path --value=$final_path
-fi
-
-# Cleaning legacy permissions
-if ynh_legacy_permissions_exists; then
-	ynh_legacy_permissions_delete_all
-
-	ynh_app_setting_delete --app=$app --key=is_public
-fi
-
 #=================================================
 # GET THE CALDAV APP
 #=================================================
 
-agendav_app_check_installation() {
-	echo $(yunohost app list | grep "id: $1")
-}
-
-# Check whether Baïkal or Radicale is installed
-baikal_install=$(agendav_app_check_installation "baikal")
-radicale_install=$(agendav_app_check_installation "radicale")
-if [ -n "$baikal_install" ]
-then
-    caldav_app=baikal
-    caldav_baseurl="/cal.php/"
-elif [ -n "$radicale_install" ]
-then
-    caldav_app=radicale
-    caldav_baseurl=/
-else
-    ynh_die --message="Please install Baïkal or Radicale before AgenDAV."
-fi
-
-#=================================================
-# CREATE DEDICATED USER
-#=================================================
-ynh_script_progression --message="Making sure dedicated system user exists..." --weight=1
-
-# Create a dedicated user (if not existing)
-ynh_system_user_create --username=$app --home_dir="$final_path"
+caldav_info=$(_ynh_agendav_find_caldav_app)
+caldav_app="$(cut -d " " -f 1 <<< "$caldav_info")"
+caldav_baseurl="$(cut -d " " -f 2 <<< "$caldav_info")"
 
 #=================================================
 # DOWNLOAD, CHECK AND UNPACK SOURCE
@@ -109,22 +37,15 @@ ynh_system_user_create --username=$app --home_dir="$final_path"
 
 if [ "$upgrade_type" == "UPGRADE_APP" ]
 then
-	ynh_script_progression --message="Upgrading source files..." --weight=1
+    ynh_script_progression --message="Upgrading source files..." --weight=1
 
-	# Download, check integrity, uncompress and patch the source from app.src
-	ynh_setup_source --dest_dir="$final_path" --keep="web/config/settings.php"
+    # Download, check integrity, uncompress and patch the source from app.src
+    ynh_setup_source --dest_dir="$install_dir" --keep="web/config/settings.php"
 fi
 
-chmod 750 "$final_path"
-chmod -R o-rwx "$final_path"
-chown -R $app:www-data "$final_path"
-
-#=================================================
-# UPGRADE DEPENDENCIES
-#=================================================
-ynh_script_progression --message="Upgrading dependencies..." --weight=1
-
-ynh_install_app_dependencies $pkg_dependencies
+chmod 750 "$install_dir"
+chmod -R o-rwx "$install_dir"
+chown -R "$app:www-data" "$install_dir"
 
 #=================================================
 # PHP-FPM CONFIGURATION
@@ -141,7 +62,6 @@ ynh_script_progression --message="Upgrading NGINX web server configuration..." -
 
 # Create a dedicated NGINX config
 ynh_add_nginx_config
-phpversion=$(ynh_app_setting_get --app=$app --key=phpversion)
 
 #=================================================
 # SPECIFIC UPGRADE
@@ -150,18 +70,15 @@ phpversion=$(ynh_app_setting_get --app=$app --key=phpversion)
 #=================================================
 ynh_script_progression --message="Updating a configuration file..." --weight=2
 
-# Generate random encryption key
-encryptkey=$(ynh_app_setting_get --app=$app --key=encryptkey)
-
 # Copy and set AgenDAV configuration
 timezone=$(cat /etc/timezone)
 
-caldav_domain=$(ynh_app_setting_get --app=$caldav_app --key=domain)
-caldav_path=$(ynh_app_setting_get --app=$caldav_app --key=path)
+caldav_domain=$(ynh_app_setting_get --app="$caldav_app" --key=domain)
+caldav_path=$(ynh_app_setting_get --app="$caldav_app" --key=path)
 caldav_url="https://${caldav_domain}${caldav_path%/}"
 caldav_baseurl="${caldav_url}${caldav_baseurl}"
 
-ynh_add_config --template="../conf/settings.php" --destination="${final_path}/web/config/settings.php"
+ynh_add_config --template="../conf/settings.php" --destination="${install_dir}/web/config/settings.php"
 
 #=================================================
 # RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)
@@ -169,19 +86,22 @@ ynh_add_config --template="../conf/settings.php" --destination="${final_path}/we
 ynh_script_progression --message="Upgrading AgenDAV..." --weight=1
 
 (
-	cd $final_path
-	php${phpversion} agendavcli migrations:migrate --no-interaction
+    cd "$install_dir" || ynh_die
+    "php$phpversion" agendavcli migrations:migrate --no-interaction
 )
 
-chown -R $app:www-data $final_path
+chown -R "$app:www-data" "$install_dir"
 
 # Only agendav user should write here
-chown -R $app ${final_path}/web/var/cache/{profiler,twig}
+chown -R "$app" "$install_dir/web/var/cache/"{profiler,twig}
 
 # The agendav user should read here, but does not need to write
 # Other users should not be able to read as it stores passwords.
-chown -R $app:www-data ${final_path}/web/config/
-chmod -R 750 ${final_path}/web/config/
+chown -R "$app:www-data" "$install_dir/web/config/"
+chmod -R 750 "$install_dir/web/config/"
+
+# FIXME: Should cleanup all the chmods.
+chmod 750 "$install_dir"
 
 #=================================================
 # GENERIC FINALIZATION
@@ -190,18 +110,11 @@ chmod -R 750 ${final_path}/web/config/
 #=================================================
 ynh_script_progression --message="Upgrading logrotate configuration..." --weight=2
 
-mkdir -p /var/log/$app
-chown -R $app: /var/log/$app
+mkdir -p "/var/log/$app"
+chown -R "$app:" "/var/log/$app"
 
 # Use logrotate to manage application logfile(s)
 ynh_use_logrotate --non-append
-
-#=================================================
-# RELOAD NGINX
-#=================================================
-ynh_script_progression --message="Reloading NGINX web server..." --weight=1
-
-ynh_systemd_action --service_name=nginx --action=reload
 
 #=================================================
 # END OF SCRIPT

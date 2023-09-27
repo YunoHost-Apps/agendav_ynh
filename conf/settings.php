@@ -23,11 +23,11 @@ $app['proxies'] = [];
 
 // Database settings
 $app['db.options'] = [
-        'dbname' => '__DB_NAME__',
-        'user' => '__DB_USER__',
-        'password' => '__DB_PWD__',
-        'host' => 'localhost',
-        'driver' => 'pdo_mysql'
+    'dbname' => '__DB_NAME__',
+    'user' => '__DB_USER__',
+    'password' => '__DB_PWD__',
+    'host' => 'localhost',
+    'driver' => 'pdo_mysql'
 ];
 
 // CSRF secret
@@ -160,7 +160,7 @@ $app['calendar.colors'] = [
  * Local configuration
  */
 
-$local_config = '__FINALPATH__/web/config/local.php';
+$local_config = '__INSTALL_DIR__/web/config/local.php';
 if (file_exists($local_config)) {
   require $local_config;
 }
