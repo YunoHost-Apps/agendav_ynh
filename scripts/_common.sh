@@ -4,16 +4,28 @@
 # COMMON VARIABLES
 #=================================================
 
-YNH_PHP_VERSION="7.4"
-
-php_dependencies="php$YNH_PHP_VERSION-ctype php$YNH_PHP_VERSION-curl php$YNH_PHP_VERSION-mbstring php$YNH_PHP_VERSION-mcrypt php$YNH_PHP_VERSION-tokenizer php$YNH_PHP_VERSION-xml php$YNH_PHP_VERSION-xmlreader php$YNH_PHP_VERSION-xmlwriter php$YNH_PHP_VERSION-mysql"
-
-# dependencies used by the app (must be on a single line)
-pkg_dependencies="$php_dependencies mariadb-server"
-
 #=================================================
 # PERSONAL HELPERS
 #=================================================
+
+_ynh_agendav_find_caldav_app() {
+    mapfile -t all_apps < <(yunohost app list --output-as json --quiet | jq -r ".apps[].id")
+
+    mapfile -t installed_baikal < <(printf -- '%s\n' "${all_apps[@]}" | grep baikal)
+    mapfile -t installed_radicale < <(printf -- '%s\n' "${all_apps[@]}" | grep radicale)
+
+    if (( "${#installed_baikal[@]}" > 0 )); then
+        caldav_app="${installed_baikal[0]}"
+        caldav_baseurl="/cal.php/"
+    elif (( "${#installed_radicale[@]}" > 0 )); then
+        caldav_app="${installed_baikal[0]}"
+        caldav_baseurl=/
+    else
+        ynh_die --message="Please install Baïkal or Radicale before AgenDAV."
+    fi
+
+    echo -e "$caldav_app $caldav_baseurl"
+}
 
 #=================================================
 # EXPERIMENTAL HELPERS

@@ -1,0 +1,17 @@
+#:schema https://raw.githubusercontent.com/YunoHost/apps/master/schemas/tests.v1.schema.json
+
+test_format = 1.0
+
+[default]
+
+    preinstall = """
+        sudo yunohost tools update apps
+        sudo yunohost domain add baikaldomain.tld
+        sudo yunohost app install baikal --force -a "domain=baikaldomain.tld&path=/baikal&password=admin"
+        """
+
+    # -------------------------------
+    # Commits to test upgrade from
+    # -------------------------------
+
+    test_upgrade_from.6fb29dd.name = "--admin-password ain't needed since like 2 years or so"
