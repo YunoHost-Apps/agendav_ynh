@@ -19,13 +19,13 @@ admindoc = "https://agendav.readthedocs.io"
 # fund = "???"
 
 [integration]
-yunohost = ">= 11.1.0"
+yunohost = ">= 11.2"
 architectures = "all"
 multi_instance = false
 ldap = true
 sso = true
 disk = "10M"
-ram.build = "50M"
+ram.build = "100M"
 ram.runtime = "10M"
 
 [install]
@@ -53,6 +53,7 @@ ram.runtime = "10M"
     [resources.sources.main]
     url = "https://github.com/agendav/agendav/releases/download/2.6.0/agendav-2.6.0.tar.gz"
     sha256 = "af72c07886e30d2443ce9587992f59c78fad5ab4a069e311286e1e7216db895e"
+    autoupdate.strategy = "latest_github_tag"
 
     [resources.system_user]
 
