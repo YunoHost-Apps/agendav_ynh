@@ -21,8 +21,8 @@ admindoc = "https://agendav.readthedocs.io"
 yunohost = ">= 11.2"
 architectures = "all"
 multi_instance = false
-ldap = false
-sso = false
+ldap = true
+sso = true
 disk = "10M"
 ram.build = "100M"
 ram.runtime = "10M"
