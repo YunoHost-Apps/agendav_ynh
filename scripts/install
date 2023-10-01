@@ -27,25 +27,25 @@ ynh_script_progression --message="Setting up source files..." --weight=4
 # Download, check integrity, uncompress and patch the source from app.src
 ynh_setup_source --dest_dir="$install_dir"
 
-chmod 750 "$install_dir"
 chmod -R o-rwx "$install_dir"
 chown -R "$app:www-data" "$install_dir"
 
 #=================================================
-# PHP-FPM CONFIGURATION
+# SYSTEM CONFIGURATION
 #=================================================
-ynh_script_progression --message="Configuring PHP-FPM..." --weight=1
+ynh_script_progression --message="Adding system configurations related to $app..." --weight=1
 
 # Create a dedicated PHP-FPM config
 ynh_add_fpm_config
 
-#=================================================
-# NGINX CONFIGURATION
-#=================================================
-ynh_script_progression --message="Configuring NGINX web server..." --weight=3
-
 # Create a dedicated NGINX config
 ynh_add_nginx_config
+
+mkdir -p "/var/log/$app"
+chown -R "$app:" "/var/log/$app"
+
+# Use logrotate to manage application logfile(s)
+ynh_use_logrotate
 
 #=================================================
 # SPECIFIC SETUP
@@ -72,7 +72,7 @@ ynh_add_config --template="../conf/settings.php" --destination="${install_dir}/w
 #=================================================
 # RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)
 #=================================================
-ynh_script_progression --message="Initialising AgenDAV..." --weight=3
+ynh_script_progression --message="Initialising $app..." --weight=3
 
 (
     cd "$install_dir" || ynh_die
@@ -88,19 +88,6 @@ chown -R "$app" "$install_dir/web/var/cache/"{profiler,twig}
 # Other users should not be able to read as it stores passwords.
 chown -R "$app:www-data" "$install_dir/web/config/"
 chmod -R 750 "$install_dir/web/config/"
-
-#=================================================
-# GENERIC FINALIZATION
-#=================================================
-# SETUP LOGROTATE
-#=================================================
-ynh_script_progression --message="Configuring log rotation..." --weight=1
-
-mkdir -p "/var/log/$app"
-chown -R "$app:" "/var/log/$app"
-
-# Use logrotate to manage application logfile(s)
-ynh_use_logrotate
 
 #=================================================
 # END OF SCRIPT
