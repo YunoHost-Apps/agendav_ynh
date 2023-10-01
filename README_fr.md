@@ -21,6 +21,11 @@ AgenDAV est un client Web CalDAV doté d'une interface AJAX pour permettre aux u
 **Version incluse :** 2.6.0~ynh3
 
 **Démo :** https://demo.yunohost.org/agendav
+
+## Captures d’écran
+
+![Capture d’écran de AgenDAV](./doc/screenshots/screenshot.png)
+
 ## Documentations et ressources
 
 * Documentation officielle de l’admin : <https://agendav.readthedocs.io>
