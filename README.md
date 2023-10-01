@@ -26,7 +26,6 @@ AgenDAV is a CalDAV web client which features an AJAX interface to allow users t
 
 * Official admin documentation: <https://agendav.readthedocs.io>
 * Upstream app code repository: <https://github.com/agendav/agendav>
-* YunoHost documentation for this app: <https://yunohost.org/app_agendav>
 * Report a bug: <https://github.com/YunoHost-Apps/agendav_ynh/issues>
 
 ## Developer info
