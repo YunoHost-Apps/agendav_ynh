@@ -72,7 +72,7 @@ ynh_add_config --template="../conf/settings.php" --destination="${install_dir}/w
 #=================================================
 # RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)
 #=================================================
-ynh_script_progression --message="Initialising AgenDAV..." --weight=3
+ynh_script_progression --message="Initialising $app..." --weight=3
 
 (
     cd "$install_dir" || ynh_die
