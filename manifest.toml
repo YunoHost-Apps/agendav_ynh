@@ -16,14 +16,13 @@ license = "GPL-3.0"
 code = "https://github.com/agendav/agendav"
 demo = "https://demo.yunohost.org/agendav"
 admindoc = "https://agendav.readthedocs.io"
-# fund = "???"
 
 [integration]
 yunohost = ">= 11.2"
 architectures = "all"
 multi_instance = false
-ldap = true
-sso = true
+ldap = false
+sso = false
 disk = "10M"
 ram.build = "100M"
 ram.runtime = "10M"
@@ -37,8 +36,6 @@ ram.runtime = "10M"
     default = "/agendav"
 
     [install.init_main_permission]
-    help.en = "A public server means that everybody is able to access to the main page of the forge, on the public profile of the user and on the public repository. But you still can limit the access to each repository if you set it as private. Note that to be able to use the remote Git command (clone, pull, push) with HTTP and to use the API by (by example with a smartphone), you need to set this application as public."
-    help.fr = "Un serveur public signifie que tout le monde peut accéder à la page principale de la forge, au profil public des utilisateurs et aux dépôts publics. Vous pouvez également définir les dépôts comme étant privés. Notez que pour pouvoir utiliser les commandes Git distantes (clone, pull, push) avec HTTP et pour pouvoir utiliser l'API (par exemple avec un smartphone), vous devez paramétrer cette application comme étant publique."
     type = "group"
     default = "all_users"
 
@@ -63,18 +60,7 @@ ram.runtime = "10M"
     main.url = "/"
 
     [resources.apt]
-    packages = [
-        "php7.4-ctype",
-        "php7.4-curl",
-        "php7.4-mbstring",
-        "php7.4-mcrypt",
-        "php7.4-tokenizer",
-        "php7.4-xml",
-        "php7.4-xmlreader",
-        "php7.4-xmlwriter",
-        "php7.4-mysql",
-        "mariadb-server"
-    ]
+    packages = "php7.4-ctype, php7.4-curl, php7.4-mbstring, php7.4-mcrypt, php7.4-tokenizer, php7.4-xml, php7.4-xmlreader, php7.4-xmlwriter, php7.4-mysql, mariadb-server"
 
     [resources.database]
     type = "mysql"
