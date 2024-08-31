@@ -1,11 +1,5 @@
 #!/bin/bash
 
-#=================================================
-# GENERIC START
-#=================================================
-# IMPORT GENERIC HELPERS
-#=================================================
-
 source _common.sh
 source /usr/share/yunohost/helpers
 
@@ -18,46 +12,43 @@ caldav_app="$(cut -d " " -f 1 <<< "$caldav_info")"
 caldav_baseurl="$(cut -d " " -f 2 <<< "$caldav_info")"
 
 #=================================================
-# STANDARD MODIFICATIONS
-#=================================================
 # DOWNLOAD, CHECK AND UNPACK SOURCE
 #=================================================
-ynh_script_progression --message="Setting up source files..." --weight=4
+ynh_script_progression "Setting up source files..."
 
 # Download, check integrity, uncompress and patch the source from app.src
 ynh_setup_source --dest_dir="$install_dir"
 
-chmod -R o-rwx "$install_dir"
-chown -R "$app:www-data" "$install_dir"
-
+#REMOVEME? Assuming the install dir is setup using ynh_setup_source, the proper chmod/chowns are now already applied and it shouldn't be necessary to tweak perms | chmod -R o-rwx "$install_dir"
+#REMOVEME? Assuming the install dir is setup using ynh_setup_source, the proper chmod/chowns are now already applied and it shouldn't be necessary to tweak perms | chown -R "$app:www-data" "$install_dir"
 #=================================================
 # SYSTEM CONFIGURATION
 #=================================================
-ynh_script_progression --message="Adding system configurations related to $app..." --weight=1
+ynh_script_progression "Adding system configurations related to $app..."
 
 # Create a dedicated PHP-FPM config
-ynh_add_fpm_config
+ynh_config_add_phpfpm
 
 # Create a dedicated NGINX config
-ynh_add_nginx_config
+ynh_config_add_nginx
 
 mkdir -p "/var/log/$app"
-chown -R "$app:" "/var/log/$app"
+#REMOVEME? Assuming ynh_config_add_logrotate is called, the proper chmod/chowns are now already applied and it shouldn't be necessary to tweak perms | chown -R "$app:" "/var/log/$app"
 
 # Use logrotate to manage application logfile(s)
-ynh_use_logrotate
+ynh_config_add_logrotate
 
 #=================================================
 # SPECIFIC SETUP
 #=================================================
 # ADD A CONFIGURATION
 #=================================================
-ynh_script_progression --message="Adding a configuration file..." --weight=2
+ynh_script_progression "Adding $app's configuration..."
 
 # Generate random encryption key
 encryptkey=$(ynh_string_random --length=24)
 
-ynh_app_setting_set --app="$app" --key=encryptkey --value="$encryptkey"
+ynh_app_setting_set --key=encryptkey --value="$encryptkey"
 
 # Copy and set AgenDAV configuration
 timezone=$(cat /etc/timezone)
@@ -67,20 +58,19 @@ caldav_path=$(ynh_app_setting_get --app=$caldav_app --key=path)
 caldav_url="https://${caldav_domain}${caldav_path%/}"
 caldav_baseurl="${caldav_url}${caldav_baseurl}"
 
-ynh_add_config --template="../conf/settings.php" --destination="${install_dir}/web/config/settings.php"
+ynh_config_add --template="settings.php" --destination="${install_dir}/web/config/settings.php"
 
 #=================================================
 # RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)
 #=================================================
-ynh_script_progression --message="Initialising $app..." --weight=3
+ynh_script_progression "Initialising $app..."
 
 (
     cd "$install_dir" || ynh_die
-    "php$phpversion" agendavcli migrations:migrate --no-interaction
+    "php$php_version" agendavcli migrations:migrate --no-interaction
 )
 
-chown -R "$app:www-data" "$install_dir"
-
+#REMOVEME? Assuming the install dir is setup using ynh_setup_source, the proper chmod/chowns are now already applied and it shouldn't be necessary to tweak perms | chown -R "$app:www-data" "$install_dir"
 # Only agendav user should write here
 chown -R "$app" "$install_dir/web/var/cache/"{profiler,twig}
 
@@ -93,4 +83,4 @@ chmod -R 750 "$install_dir/web/config/"
 # END OF SCRIPT
 #=================================================
 
-ynh_script_progression --message="Installation of $app completed" --last
+ynh_script_progression "Installation of $app completed"
