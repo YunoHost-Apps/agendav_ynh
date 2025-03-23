@@ -11,8 +11,17 @@ test_format = 1.0
             -a "domain=baikaldomain.tld&path=/baikal&password=admin&init_main_permission=all_users"
         """
 
+    # ------------
+    # Tests to run
+    # ------------
+
+    # -------------------------------
+    # Default args to use for install
+    # -------------------------------
+
     # -------------------------------
     # Commits to test upgrade from
     # -------------------------------
 
-    test_upgrade_from.6fb29dd.name = "--admin-password ain't needed since like 2 years or so"
+    # test_upgrade_from.6fb29dd.name = "--admin-password ain't needed since like 2 years or so"
+    test_upgrade_from.cccf9ef90ee86297931189cb42b5203fbb6bb1a4.name = "Upgrade from 2.6.0~ynh4"
