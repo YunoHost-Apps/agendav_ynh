@@ -5,7 +5,9 @@ NON debe editarse manualmente.
 
 # AgenDAV para YunoHost
 
-[![Nivel de integración](https://dash.yunohost.org/integration/agendav.svg)](https://dash.yunohost.org/appci/app/agendav) ![Estado de funcionamento](https://ci-apps.yunohost.org/ci/badges/agendav.status.svg) ![Estado de mantemento](https://ci-apps.yunohost.org/ci/badges/agendav.maintain.svg)
+[![Nivel de integración](https://apps.yunohost.org/badge/integration/agendav)](https://ci-apps.yunohost.org/ci/apps/agendav/)
+![Estado de funcionamento](https://apps.yunohost.org/badge/state/agendav)
+![Estado de mantemento](https://apps.yunohost.org/badge/maintained/agendav)
 
 [![Instalar AgenDAV con YunoHost](https://install-app.yunohost.org/install-with-yunohost.svg)](https://install-app.yunohost.org/?app=agendav)
 
@@ -19,7 +21,7 @@ NON debe editarse manualmente.
 AgenDAV is a CalDAV web client which features an AJAX interface to allow users to manage their own calendars and shared ones.
 
 
-**Versión proporcionada:** 2.6.0~ynh4
+**Versión proporcionada:** 2.6.0~ynh5
 
 **Demo:** <https://demo.yunohost.org/agendav>
 
