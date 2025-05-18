@@ -60,7 +60,7 @@ encryptkey=$(ynh_string_random --length=24)
 ynh_app_setting_set --app="$app" --key=encryptkey --value="$encryptkey"
 
 # Copy and set AgenDAV configuration
-timezone=$(cat /etc/timezone)
+timezone=$(timedatectl show --value --property=Timezone)
 
 caldav_domain=$(ynh_app_setting_get --app=$caldav_app --key=domain)
 caldav_path=$(ynh_app_setting_get --app=$caldav_app --key=path)

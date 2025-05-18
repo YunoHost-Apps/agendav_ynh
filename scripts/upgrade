@@ -64,7 +64,7 @@ ynh_use_logrotate --non-append
 ynh_script_progression --message="Updating a configuration file..." --weight=2
 
 # Copy and set AgenDAV configuration
-timezone=$(cat /etc/timezone)
+timezone=$(timedatectl show --value --property=Timezone)
 
 caldav_domain=$(ynh_app_setting_get --app="$caldav_app" --key=domain)
 caldav_path=$(ynh_app_setting_get --app="$caldav_app" --key=path)
