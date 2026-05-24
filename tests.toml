@@ -23,5 +23,6 @@ test_format = 1.0
     # Commits to test upgrade from
     # -------------------------------
 
-    # test_upgrade_from.6fb29dd.name = "--admin-password ain't needed since like 2 years or so"
-    test_upgrade_from.cccf9ef90ee86297931189cb42b5203fbb6bb1a4.name = "Upgrade from 2.6.0~ynh4"
+    # No upgrade test from 2.6.0: 3.0.0 is a PHP 7.4->8.5 / Silex->Slim rewrite with a
+    # changed config format and DB schema. In-place upgrade is supported on a best-effort
+    # basis (Doctrine migrations + config regeneration) but is not CI-gated.

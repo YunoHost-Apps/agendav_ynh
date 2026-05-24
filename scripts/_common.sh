@@ -18,10 +18,10 @@ _ynh_agendav_find_caldav_app() {
         caldav_app="${installed_baikal[0]}"
         caldav_baseurl="/cal.php/"
     elif (( "${#installed_radicale[@]}" > 0 )); then
-        caldav_app="${installed_baikal[0]}"
+        caldav_app="${installed_radicale[0]}"
         caldav_baseurl=/
     else
-        ynh_die --message="Please install Baïkal or Radicale before AgenDAV."
+        ynh_die "Please install Baïkal or Radicale before AgenDAV."
     fi
 
     echo -e "$caldav_app $caldav_baseurl"

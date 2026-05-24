@@ -7,7 +7,7 @@ name = "AgenDAV"
 description.en = "CalDAV web client"
 description.fr = "Client web pour CalDAV"
 
-version = "2.6.0~ynh5"
+version = "3.3.1~ynh1"
 
 maintainers = []
 
@@ -18,7 +18,8 @@ demo = "https://demo.yunohost.org/agendav"
 admindoc = "https://agendav.readthedocs.io"
 
 [integration]
-yunohost = ">= 11.2"
+yunohost = ">= 12.1.17"
+helpers_version = "2.1"
 architectures = "all"
 multi_instance = false
 ldap = true
@@ -48,8 +49,8 @@ ram.runtime = "10M"
 
 [resources]
     [resources.sources.main]
-    url = "https://github.com/agendav/agendav/releases/download/2.6.0/agendav-2.6.0.tar.gz"
-    sha256 = "af72c07886e30d2443ce9587992f59c78fad5ab4a069e311286e1e7216db895e"
+    url = "https://github.com/agendav/agendav/releases/download/3.3.1/agendav-3.3.1.tar.gz"
+    sha256 = "aec1038845ea9b489f575028d092fb7ef3dbee7dcf302783a3f6d383e7473030"
     autoupdate.strategy = "latest_github_tag"
 
     [resources.system_user]
@@ -60,7 +61,7 @@ ram.runtime = "10M"
     main.url = "/"
 
     [resources.apt]
-    packages = "php7.4-ctype, php7.4-curl, php7.4-mbstring, php7.4-mcrypt, php7.4-tokenizer, php7.4-xml, php7.4-xmlreader, php7.4-xmlwriter, php7.4-mysql, mariadb-server"
+    packages = "php8.5-fpm, php8.5-cli, php8.5-ctype, php8.5-curl, php8.5-mbstring, php8.5-xml, php8.5-mysql, php8.5-intl, mariadb-server"
 
     [resources.database]
     type = "mysql"

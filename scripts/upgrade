@@ -10,12 +10,6 @@ source _common.sh
 source /usr/share/yunohost/helpers
 
 #=================================================
-# CHECK VERSION
-#=================================================
-
-upgrade_type=$(ynh_check_app_version_changed)
-
-#=================================================
 # GET THE CALDAV APP
 #=================================================
 
@@ -26,14 +20,12 @@ caldav_baseurl="$(cut -d " " -f 2 <<< "$caldav_info")"
 #=================================================
 # DOWNLOAD, CHECK AND UNPACK SOURCE
 #=================================================
+ynh_script_progression "Upgrading source files..."
 
-if [ "$upgrade_type" == "UPGRADE_APP" ]
-then
-    ynh_script_progression --message="Upgrading source files..." --weight=1
-
-    # Download, check integrity, uncompress and patch the source from app.src
-    ynh_setup_source --dest_dir="$install_dir" --keep="web/config/settings.php"
-fi
+# Download, check integrity, uncompress the source from manifest.toml.
+# settings.php is regenerated below from the template + stored $encryptkey, so it
+# is intentionally not --kept: the pre-3.0 (Silex) format is incompatible anyway.
+ynh_setup_source --dest_dir="$install_dir"
 
 chmod 750 "$install_dir"
 chmod -R o-rwx "$install_dir"
@@ -42,26 +34,33 @@ chown -R "$app:www-data" "$install_dir"
 #=================================================
 # REAPPLY SYSTEM CONFIGURATIONS
 #=================================================
-ynh_script_progression --message="Upgrading system configurations related to $app..." --weight=1
+ynh_script_progression "Upgrading system configurations related to $app..."
 
 # Create a dedicated PHP-FPM config
-ynh_add_fpm_config
+ynh_config_add_phpfpm
 
 # Create a dedicated NGINX config
-ynh_add_nginx_config
+ynh_config_add_nginx
 
 mkdir -p "/var/log/$app"
 chown -R "$app:" "/var/log/$app"
 
 # Use logrotate to manage application logfile(s)
-ynh_use_logrotate --non-append
+ynh_config_add_logrotate
 
 #=================================================
 # SPECIFIC UPGRADE
 #=================================================
 # UPDATE A CONFIG FILE
 #=================================================
-ynh_script_progression --message="Updating a configuration file..." --weight=2
+ynh_script_progression "Updating a configuration file..."
+
+# Generate the session encryption key if it does not exist yet (installs predating the
+# managed key relied on the var/session.key fallback, which is not writable here)
+if [ -z "${session_key:-}" ]; then
+    session_key=$(openssl rand -hex 32)
+    ynh_app_setting_set --app="$app" --key=session_key --value="$session_key"
+fi
 
 # Copy and set AgenDAV configuration
 timezone=$(timedatectl show --value --property=Timezone)
@@ -71,27 +70,28 @@ caldav_path=$(ynh_app_setting_get --app="$caldav_app" --key=path)
 caldav_url="https://${caldav_domain}${caldav_path%/}"
 caldav_baseurl="${caldav_url}${caldav_baseurl}"
 
-ynh_add_config --template="../conf/settings.php" --destination="${install_dir}/web/config/settings.php"
+ynh_config_add --template="../conf/settings.php" --destination="${install_dir}/config/settings.php"
 
 #=================================================
 # RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)
 #=================================================
-ynh_script_progression --message="Upgrading $app..." --weight=1
+ynh_script_progression "Upgrading $app..."
 
 (
-    cd "$install_dir" || ynh_die
-    "php$phpversion" agendavcli migrations:migrate --no-interaction
+    cd "$install_dir" || ynh_die "Unable to access $install_dir"
+    "php$php_version" bin/agendavcli migrations:migrate --no-interaction
 )
 
 chown -R "$app:www-data" "$install_dir"
 
-# Only agendav user should write here
-chown -R "$app" "$install_dir/web/var/cache/"{profiler,twig}
+# Only agendav user should write here (twig cache, doctrine cache, etc.)
+mkdir -p "$install_dir/var/cache"
+chown -R "$app" "$install_dir/var"
 
 # The agendav user should read here, but does not need to write
 # Other users should not be able to read as it stores passwords.
-chown -R "$app:www-data" "$install_dir/web/config/"
-chmod -R 750 "$install_dir/web/config/"
+chown -R "$app:www-data" "$install_dir/config/"
+chmod -R 750 "$install_dir/config/"
 
 # FIXME: Should cleanup all the chmods.
 chmod 750 "$install_dir"
@@ -100,4 +100,4 @@ chmod 750 "$install_dir"
 # END OF SCRIPT
 #=================================================
 
-ynh_script_progression --message="Upgrade of $app completed" --last
+ynh_script_progression "Upgrade of $app completed"
