@@ -11,12 +11,16 @@ It shall NOT be edited by hand.
 CalDAV web client
 
 [![App Demo](https://img.shields.io/badge/App_Demo-blue?style=for-the-badge)](https://demo.yunohost.org/agendav)
-[![Version: 2.6.0~ynh5](https://img.shields.io/badge/Version-2.6.0~ynh5-rgba(0,150,0,1)?style=for-the-badge)](https://ci-apps.yunohost.org/ci/apps/agendav/)
+[![Version: 2.6.0~ynh5](https://img.shields.io/badge/Version-2.6.0~ynh5-rgb(18,138,11)?style=for-the-badge)](https://ci-apps.yunohost.org/ci/apps/agendav/)
 
 <div align="center">
 <a href="https://apps.yunohost.org/app/agendav"><img height="100px" src="https://github.com/YunoHost/yunohost-artwork/raw/refs/heads/main/badges/neopossum-badges/badge_more_info_on_the_appstore.svg"/></a>
 <a href="https://github.com/YunoHost-Apps/agendav_ynh/issues"><img height="100px" src="https://github.com/YunoHost/yunohost-artwork/raw/refs/heads/main/badges/neopossum-badges/badge_report_an_issue.svg"/></a>
 </div>
+
+
+## Screenshots
+![Screenshot of AgenDAV](./doc/screenshots/screenshot.png)
 
 ## 📦 Developer info
 
