@@ -15,7 +15,6 @@ caldav_baseurl="$(cut -d " " -f 2 <<< "$caldav_info")"
 # DOWNLOAD, CHECK AND UNPACK SOURCE
 #=================================================
 
-# FIXME: this is still supported but the recommendation is now to *always* re-setup the app sources wether or not the upstream sources changed
 if ynh_app_upstream_version_changed
 then
     ynh_script_progression "Upgrading source files..."
@@ -24,9 +23,6 @@ then
     ynh_setup_source --dest_dir="$install_dir" --keep="web/config/settings.php"
 fi
 
-#REMOVEME? Assuming the install dir is setup using ynh_setup_source, the proper chmod/chowns are now already applied and it shouldn't be necessary to tweak perms | chmod 750 "$install_dir"
-#REMOVEME? Assuming the install dir is setup using ynh_setup_source, the proper chmod/chowns are now already applied and it shouldn't be necessary to tweak perms | chmod -R o-rwx "$install_dir"
-#REMOVEME? Assuming the install dir is setup using ynh_setup_source, the proper chmod/chowns are now already applied and it shouldn't be necessary to tweak perms | chown -R "$app:www-data" "$install_dir"
 #=================================================
 # REAPPLY SYSTEM CONFIGURATIONS
 #=================================================
@@ -39,7 +35,6 @@ ynh_config_add_phpfpm
 ynh_config_add_nginx
 
 mkdir -p "/var/log/$app"
-#REMOVEME? Assuming ynh_config_add_logrotate is called, the proper chmod/chowns are now already applied and it shouldn't be necessary to tweak perms | chown -R "$app:" "/var/log/$app"
 
 # Use logrotate to manage application logfile(s)
 ynh_config_add_logrotate
