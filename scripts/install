@@ -67,7 +67,6 @@ ynh_script_progression "Initialising $app..."
     "php$php_version" agendavcli migrations:migrate --no-interaction
 )
 
-#REMOVEME? Assuming the install dir is setup using ynh_setup_source, the proper chmod/chowns are now already applied and it shouldn't be necessary to tweak perms | chown -R "$app:www-data" "$install_dir"
 # Only agendav user should write here
 chown -R "$app" "$install_dir/web/var/cache/"{profiler,twig}
 
