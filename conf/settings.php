@@ -1,166 +1,59 @@
 <?php
 /**
- * Site configuration
+ * AgenDAV site configuration for YunoHost.
  *
- * IMPORTANT: These are AgenDAV defaults. Do not change this file, apply your
- * changes to settings.php
- */
-
-// Site title
-$app['site.title'] = 'YunoHost Calendar';
-
-// Site logo (should be placed in public/img). Optional
-$app['site.logo'] = 'agendav_100transp.png';
-
-// Site favicon (should be placed in public/img). Optional
-$app['site.favicon'] = 'favicon.ico';
-
-// Site footer. Optional
-$app['site.footer'] = 'AgenDAV ' . \AgenDAV\Version::V;
-
-// Trusted proxy ips
-$app['proxies'] = [];
-
-// Database settings
-$app['db.options'] = [
-    'dbname' => '__DB_NAME__',
-    'user' => '__DB_USER__',
-    'password' => '__DB_PWD__',
-    'host' => 'localhost',
-    'driver' => 'pdo_mysql'
-];
-
-// CSRF secret
-$app['csrf.secret'] = '__ENCRYPTKEY__';
-
-// Log path
-$app['log.path'] = '/var/log/__APP__/';
-
-// Logging level
-$app['log.level'] = 'INFO';
-
-// Base URL
-$app['caldav.baseurl'] = '__CALDAV_BASEURL__';
-
-// Authentication method required by CalDAV server (basic or digest)
-$app['caldav.authmethod'] = 'basic';
-
-// Whether to show public CalDAV urls
-$app['caldav.publicurls'] = true;
-
-// Whether to show public CalDAV urls
-$app['caldav.baseurl.public'] = 'https://__CALDAV_DOMAIN__';
-
-// Connection timeout for CalDAV requests (default: wait forever)
-$app['caldav.connect.timeout'] = 0;
-//
-// Response timeout for CalDAV requests (default: wait forever)
-$app['caldav.response.timeout'] = 0;
-
-// Whether to verify the SSL certificate (default: true)
-$app['caldav.certificate.verify'] = false;
-
-// Email attribute name
-$app['principal.email.attribute'] = '{DAV:}email';
-
-// Calendar sharing
-$app['calendar.sharing'] = false;
-
-// Calendar sharing permissions. In case of doubt, do not modify them
-// These defaults are only useful for DAViCal (http://wiki.davical.org/index.php/Permissions)
-$app['calendar.sharing.permissions'] = [
-    'owner' => [
-        '{DAV:}all',
-        '{DAV:}read',
-        '{DAV:}unlock',
-        '{DAV:}read-acl',
-        '{DAV:}read-current-user-privilege-set',
-        '{DAV:}write-acl',
-        '{urn:ietf:params:xml:ns:caldav}read-free-busy',
-        '{DAV:}write',
-        '{DAV:}write-properties',
-        '{DAV:}write-content',
-        '{DAV:}bind',
-        '{DAV:}unbind'
-     ],
-    'read-only' => [ '{DAV:}read', '{urn:ietf:params:xml:ns:caldav}read-free-busy'],
-    'read-write' => [ '{DAV:}read', '{DAV:}write', '{urn:ietf:params:xml:ns:caldav}read-free-busy' ],
-    'default' => [ '{urn:ietf:params:xml:ns:caldav}read-free-busy' ]
-];
-
-// Default timezone
-$app['defaults.timezone'] = '__TIMEZONE__';
-
-// Default language
-$app['defaults.language'] = '__LANGUAGE__';
-
-// Default time format. Options: '12' / '24'
-$app['defaults.time_format'] = '24';
-
-/*
- * Default date format. Options:
+ * Since AgenDAV 3.0.0 the configuration is a chain of PHP-DI definition files:
+ * config/default.settings.php (defaults) -> this file (overrides) ->
+ * config/prod.php. This file must return an array of overrides.
  *
- * - ymd: YYYY-mm-dd
- * - dmy: dd-mm-YYYY
- * - mdy: mm-dd-YYYY
+ * Managed by YunoHost (ynh_config_add) — do not edit by hand.
  */
-$app['defaults.date_format'] = 'ymd';
 
-// Default first day of week. Options: 0 (Sunday), 1 (Monday)
-$app['defaults.weekstart'] = 0;
+return [
+    // Site title
+    'site.title' => 'YunoHost Calendar',
 
-// Default for showing the week numbers. Options: true/false
-$app['defaults.show_week_nb'] = false;
+    // Base path: AgenDAV is served under this subdirectory by YunoHost ('/' = root).
+    'app.base_path' => '__PATH__',
 
-// Default for showing the "now" indicator, a line on current time. Options: true/false
-$app['defaults.show_now_indicator'] = true;
-//
-// Default number of days covered by the "list" (agenda) view. Allowed values: 7, 14 or 31
-$app['defaults.list_days'] = 7;
+    // Database settings
+    'db.options' => [
+        'dbname' => '__DB_NAME__',
+        'user' => '__DB_USER__',
+        'password' => '__DB_PWD__',
+        'host' => 'localhost',
+        'driver' => 'pdo_mysql',
+    ],
 
-// Default view (month, week, day or list)
-$app['defaults.default_view'] = 'month';
+    // CSRF secret (required)
+    'csrf.secret' => '__ENCRYPTKEY__',
 
-// Logout redirection. Optional
-$main_domain = exec('cat /etc/yunohost/current_host');
-$app['logout.redirection'] = 'https://' . $main_domain . '/yunohost/sso/?action=logout';
+    // Encrypts CalDAV credentials stored in the session. Set explicitly because the
+    // var/session.key fallback resolves to dirname(log.path)=/var/log, which is not
+    // writable by the app user. Must be 64 hex chars (32 bytes).
+    'session.encryption.key' => '__SESSION_KEY__',
 
-// Calendar colors
-$app['calendar.colors'] = [
-    '03A9F4', // Light blue
-    '3F51B5', // Indigo
-    'F44336', // Red
-    'E91E63', // Pink
-    '9C27B0', // Purple
-    '673AB7', // Deep purple
+    // Log path
+    'log.path' => '/var/log/__APP__/',
+    'log.level' => 'INFO',
 
-    'B3E5FC', // Pale light blue
-    'C5CAE9', // Pale Indigo
-    'FFCDD2', // Pale red
-    'F8BBD0', // Pale pink
-    'E1BEE7', // Pale purple
-    'D1C4E9', // Pale deep purple
+    // CalDAV server
+    'caldav.baseurl' => '__CALDAV_BASEURL__',
+    'caldav.baseurl.public' => 'https://__CALDAV_DOMAIN__',
+    'caldav.publicurls' => true,
+    'caldav.authmethod' => 'basic',
+    'caldav.certificate.verify' => false,
 
-    '4CAF50', // Green
-    'FFC107', // Yellow
-    'CDDC39', // Lime
-    'FF9800', // Orange
-    '795548', // Brown
-    '9E9E9E', // Gray
+    // Defaults
+    'defaults.timezone' => '__TIMEZONE__',
+    'defaults.language' => '__LANGUAGE__',
 
-    'C8E6C9', // Pale green
-    'FFF9C4', // Pale yellow
-    'F0F4C3', // Pale lime
-    'FFE0B2', // Pale orange
-    'D7CCC8', // Pale brown
-    'F5F5F5', // Pale gray
+    // Log out through the YunoHost SSO
+    'logout.redirection' => 'https://'
+        . trim((string) @file_get_contents('/etc/yunohost/current_host'))
+        . '/yunohost/sso/?action=logout',
+
+    // Authenticate transparently from the SSO via HTTP Basic
+    // (PHP_AUTH_USER / PHP_AUTH_PW), in addition to the login form.
+    'auth.methods' => [\AgenDAV\Authentication\HttpBasic::class],
 ];
-
-/**
- * Local configuration
- */
-
-$local_config = '__INSTALL_DIR__/web/config/local.php';
-if (file_exists($local_config)) {
-  require $local_config;
-}
