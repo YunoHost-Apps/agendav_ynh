@@ -55,7 +55,7 @@ caldav_path=$(ynh_app_setting_get --app=$caldav_app --key=path)
 caldav_url="https://${caldav_domain}${caldav_path%/}"
 caldav_baseurl="${caldav_url}${caldav_baseurl}"
 
-ynh_config_add --template="settings.php" --destination="${install_dir}/web/config/settings.php"
+ynh_config_add --template="settings.php" --destination="${install_dir}/config/settings.php"
 
 #=================================================
 # RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)
@@ -72,8 +72,8 @@ chown -R "$app" "$install_dir/web/var/cache/"{profiler,twig}
 
 # The agendav user should read here, but does not need to write
 # Other users should not be able to read as it stores passwords.
-chown -R "$app:www-data" "$install_dir/web/config/"
-chmod -R 750 "$install_dir/web/config/"
+chown -R "$app:www-data" "$install_dir/config/"
+chmod -R 750 "$install_dir/config/"
 
 #=================================================
 # END OF SCRIPT
