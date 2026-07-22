@@ -61,7 +61,7 @@ ynh_config_add --template="settings.php" --destination="${install_dir}/config/se
 ynh_script_progression "Initialising $app..."
 
 (
-    cd "$install_dir" || ynh_die
+    cd "$install_dir/bin" || ynh_die
     "php$php_version" agendavcli migrations:migrate --no-interaction
 )
 
