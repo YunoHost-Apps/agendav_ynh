@@ -8,7 +8,7 @@ test_format = 1.0
         sudo yunohost tools update apps
         sudo yunohost domain add baikaldomain.tld
         sudo yunohost app install baikal --force \
-            -a "domain=baikaldomain.tld&path=/baikal&password=admin&init_main_permission=all_users"
+            -a "domain=baikaldomain.tld&path=/baikal&password=cb42b5203fbb6bb1a4&init_main_permission=all_users"
         """
 
     # ------------
