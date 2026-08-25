@@ -10,6 +10,15 @@ source _common.sh
 source /usr/share/yunohost/helpers
 
 #=================================================
+# CHECK FOR A CALDAV BACKEND
+#=================================================
+
+# _ynh_agendav_config_settings needs a Baikal or Radicale install further down.
+# Probe for it here so a missing backend aborts before the source tree gets
+# replaced below, rather than half-way through with settings.php already gone.
+_ynh_agendav_find_caldav_app > /dev/null
+
+#=================================================
 # DOWNLOAD, CHECK AND UNPACK SOURCE
 #=================================================
 ynh_script_progression "Setting up source files..."
