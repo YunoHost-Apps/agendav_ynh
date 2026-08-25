@@ -14,8 +14,8 @@ source /usr/share/yunohost/helpers
 #=================================================
 
 # _ynh_agendav_config_settings needs a Baikal or Radicale install further down.
-# Probe for it here so a missing backend aborts before the source tree gets
-# replaced below, rather than half-way through with settings.php already gone.
+# Probe for it here so a missing backend aborts before ynh_setup_source replaces
+# the tree, rather than half-way through with settings.php already gone.
 _ynh_agendav_find_caldav_app > /dev/null
 
 #=================================================
