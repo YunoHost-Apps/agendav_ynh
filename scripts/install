@@ -10,14 +10,6 @@ source _common.sh
 source /usr/share/yunohost/helpers
 
 #=================================================
-# GET THE CALDAV APP
-#=================================================
-
-caldav_info=$(_ynh_agendav_find_caldav_app)
-caldav_app="$(cut -d " " -f 1 <<< "$caldav_info")"
-caldav_baseurl="$(cut -d " " -f 2 <<< "$caldav_info")"
-
-#=================================================
 # DOWNLOAD, CHECK AND UNPACK SOURCE
 #=================================================
 ynh_script_progression "Setting up source files..."
@@ -62,15 +54,8 @@ session_key=$(openssl rand -hex 32)
 
 ynh_app_setting_set --app="$app" --key=session_key --value="$session_key"
 
-# Copy and set AgenDAV configuration
-timezone=$(timedatectl show --value --property=Timezone)
-
-caldav_domain=$(ynh_app_setting_get --app="$caldav_app" --key=domain)
-caldav_path=$(ynh_app_setting_get --app="$caldav_app" --key=path)
-caldav_url="https://${caldav_domain}${caldav_path%/}"
-caldav_baseurl="${caldav_url}${caldav_baseurl}"
-
-ynh_config_add --template="../conf/settings.php" --destination="${install_dir}/config/settings.php"
+# Copy and set AgenDAV configuration (dies if no CalDAV backend is installed)
+_ynh_agendav_config_settings
 
 #=================================================
 # RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)
