@@ -1,23 +1,33 @@
 #!/bin/bash
 
+#=================================================
+# GENERIC START
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
 source _common.sh
 source /usr/share/yunohost/helpers
 
 #=================================================
-# GET THE CALDAV APP
+# CHECK FOR A CALDAV BACKEND
 #=================================================
 
-caldav_info=$(_ynh_agendav_find_caldav_app)
-caldav_app="$(cut -d " " -f 1 <<< "$caldav_info")"
-caldav_baseurl="$(cut -d " " -f 2 <<< "$caldav_info")"
+# _ynh_agendav_config_settings needs a Baikal or Radicale install further down.
+# Probe for it here so a missing backend aborts before ynh_setup_source replaces
+# the tree, rather than half-way through with settings.php already gone.
+_ynh_agendav_find_caldav_app > /dev/null
 
 #=================================================
 # DOWNLOAD, CHECK AND UNPACK SOURCE
 #=================================================
 ynh_script_progression "Setting up source files..."
 
-# Download, check integrity, uncompress and patch the source from app.src
+# Download, check integrity, uncompress and patch the source from manifest.toml
 ynh_setup_source --dest_dir="$install_dir"
+
+chmod -R o-rwx "$install_dir"
+chown -R "$app:www-data" "$install_dir"
 
 #=================================================
 # SYSTEM CONFIGURATION
@@ -31,41 +41,46 @@ ynh_config_add_phpfpm
 ynh_config_add_nginx
 
 mkdir -p "/var/log/$app"
+chown -R "$app:" "/var/log/$app"
 
 # Use logrotate to manage application logfile(s)
 ynh_config_add_logrotate
 
 #=================================================
+# SPECIFIC SETUP
+#=================================================
 # ADD A CONFIGURATION
 #=================================================
-ynh_script_progression "Adding $app's configuration..."
+ynh_script_progression "Adding a configuration file..."
 
 # Generate random encryption key
 encryptkey=$(ynh_string_random --length=24)
 
-ynh_app_setting_set --key=encryptkey --value="$encryptkey"
+ynh_app_setting_set --app="$app" --key=encryptkey --value="$encryptkey"
 
-# Copy and set AgenDAV configuration
-timezone=$(timedatectl show --value --property=Timezone)
+# Generate the session encryption key (64 hex chars = 32 bytes, for sodium)
+session_key=$(openssl rand -hex 32)
 
-caldav_domain=$(ynh_app_setting_get --app=$caldav_app --key=domain)
-caldav_path=$(ynh_app_setting_get --app=$caldav_app --key=path)
-caldav_url="https://${caldav_domain}${caldav_path%/}"
-caldav_baseurl="${caldav_url}${caldav_baseurl}"
+ynh_app_setting_set --app="$app" --key=session_key --value="$session_key"
 
-ynh_config_add --template="settings.php" --destination="${install_dir}/config/settings.php"
+# Copy and set AgenDAV configuration (dies if no CalDAV backend is installed)
+_ynh_agendav_config_settings
 
 #=================================================
 # RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)
 #=================================================
 ynh_script_progression "Initialising $app..."
 
-pushd $install_dir
-    php$php_version bin/agendavcli migrations:migrate --no-interaction
-popd
+(
+    cd "$install_dir" || ynh_die "Unable to access $install_dir"
+    "php$php_version" bin/agendavcli migrations:migrate --no-interaction
+)
 
-# Only agendav user should write here
-chown -R "$app" "$install_dir/web/var/cache/"{profiler,twig}
+chown -R "$app:www-data" "$install_dir"
+
+# Only agendav user should write here (twig cache, doctrine cache, etc.)
+mkdir -p "$install_dir/var/cache"
+chown -R "$app" "$install_dir/var"
 
 # The agendav user should read here, but does not need to write
 # Other users should not be able to read as it stores passwords.

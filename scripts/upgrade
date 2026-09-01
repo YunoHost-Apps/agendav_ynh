@@ -1,23 +1,36 @@
 #!/bin/bash
 
+#=================================================
+# GENERIC START
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
 source _common.sh
 source /usr/share/yunohost/helpers
 
 #=================================================
-# GET THE CALDAV APP
+# CHECK FOR A CALDAV BACKEND
 #=================================================
 
-caldav_info=$(_ynh_agendav_find_caldav_app)
-caldav_app="$(cut -d " " -f 1 <<< "$caldav_info")"
-caldav_baseurl="$(cut -d " " -f 2 <<< "$caldav_info")"
+# _ynh_agendav_config_settings needs a Baikal or Radicale install further down.
+# Probe for it here so a missing backend aborts before ynh_setup_source replaces
+# the tree, rather than half-way through with settings.php already gone.
+_ynh_agendav_find_caldav_app > /dev/null
 
 #=================================================
 # DOWNLOAD, CHECK AND UNPACK SOURCE
 #=================================================
 ynh_script_progression "Upgrading source files..."
 
-# Download, check integrity, uncompress and patch the source from app.src
-ynh_setup_source --dest_dir="$install_dir" --keep="config/settings.php"
+# Download, check integrity, uncompress the source from manifest.toml.
+# settings.php is regenerated below from the template + stored $encryptkey, so it
+# is intentionally not --kept: the pre-3.0 (Silex) format is incompatible anyway.
+ynh_setup_source --dest_dir="$install_dir"
+
+chmod 750 "$install_dir"
+chmod -R o-rwx "$install_dir"
+chown -R "$app:www-data" "$install_dir"
 
 #=================================================
 # REAPPLY SYSTEM CONFIGURATIONS
@@ -31,24 +44,27 @@ ynh_config_add_phpfpm
 ynh_config_add_nginx
 
 mkdir -p "/var/log/$app"
+chown -R "$app:" "/var/log/$app"
 
 # Use logrotate to manage application logfile(s)
 ynh_config_add_logrotate
 
 #=================================================
+# SPECIFIC UPGRADE
+#=================================================
 # UPDATE A CONFIG FILE
 #=================================================
-ynh_script_progression "Updating configuration..."
+ynh_script_progression "Updating a configuration file..."
 
-# Copy and set AgenDAV configuration
-timezone=$(timedatectl show --value --property=Timezone)
+# Generate the session encryption key if it does not exist yet (installs predating the
+# managed key relied on the var/session.key fallback, which is not writable here)
+if [ -z "${session_key:-}" ]; then
+    session_key=$(openssl rand -hex 32)
+    ynh_app_setting_set --app="$app" --key=session_key --value="$session_key"
+fi
 
-caldav_domain=$(ynh_app_setting_get --app="$caldav_app" --key=domain)
-caldav_path=$(ynh_app_setting_get --app="$caldav_app" --key=path)
-caldav_url="https://${caldav_domain}${caldav_path%/}"
-caldav_baseurl="${caldav_url}${caldav_baseurl}"
-
-ynh_config_add --template="settings.php" --destination="${install_dir}/web/config/settings.php"
+# Copy and set AgenDAV configuration (dies if no CalDAV backend is installed)
+_ynh_agendav_config_settings
 
 #=================================================
 # RUN DATABASE MIGRATIONS (INCLUDES INITIALIZATION)
@@ -56,17 +72,23 @@ ynh_config_add --template="settings.php" --destination="${install_dir}/web/confi
 ynh_script_progression "Upgrading $app..."
 
 (
-    cd "$install_dir" || ynh_die
-    "php$php_version" agendavcli migrations:migrate --no-interaction
+    cd "$install_dir" || ynh_die "Unable to access $install_dir"
+    "php$php_version" bin/agendavcli migrations:migrate --no-interaction
 )
 
-# Only agendav user should write here
-chown -R "$app" "$install_dir/web/var/cache/"{profiler,twig}
+chown -R "$app:www-data" "$install_dir"
+
+# Only agendav user should write here (twig cache, doctrine cache, etc.)
+mkdir -p "$install_dir/var/cache"
+chown -R "$app" "$install_dir/var"
 
 # The agendav user should read here, but does not need to write
 # Other users should not be able to read as it stores passwords.
 chown -R "$app:www-data" "$install_dir/config/"
 chmod -R 750 "$install_dir/config/"
+
+# FIXME: Should cleanup all the chmods.
+chmod 750 "$install_dir"
 
 #=================================================
 # END OF SCRIPT

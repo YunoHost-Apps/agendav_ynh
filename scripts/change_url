@@ -4,6 +4,30 @@ source _common.sh
 source /usr/share/yunohost/helpers
 
 #=================================================
+# UPDATE THE APP CONFIGURATION
+#=================================================
+ynh_script_progression "Updating $app's configuration file..."
+
+# settings.php carries 'app.base_path', which public/index.php feeds to Slim's
+# setBasePath(). Without this the router keeps matching the old prefix and every
+# URL under the new one 404s. $domain and $path already hold the new values here.
+#
+# This runs before the NGINX switch on purpose: _ynh_agendav_config_settings dies
+# if no CalDAV backend is installed, and failing here leaves nothing changed,
+# whereas failing after the switch would leave the app half-migrated.
+_ynh_agendav_config_settings
+
+# Compiled Twig templates and the Doctrine cache are regenerable; drop them so
+# nothing can carry the old base path across.
+ynh_safe_rm "$install_dir/var/cache"
+mkdir -p "$install_dir/var/cache"
+chown -R "$app" "$install_dir/var"
+
+# config/ stores CalDAV passwords: readable by the web server group, not world.
+chown -R "$app:www-data" "$install_dir/config/"
+chmod -R 750 "$install_dir/config/"
+
+#=================================================
 # MODIFY URL IN NGINX CONF
 #=================================================
 ynh_script_progression "Updating NGINX web server configuration..."
