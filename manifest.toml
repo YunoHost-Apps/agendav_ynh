@@ -7,7 +7,7 @@ name = "AgenDAV"
 description.en = "CalDAV web client"
 description.fr = "Client web pour CalDAV"
 
-version = "3.3.1~ynh1"
+version = "3.4.0~ynh1"
 
 maintainers = ["madtibo"]
 
@@ -51,8 +51,8 @@ ram.runtime = "10M"
 
 [resources]
     [resources.sources.main]
-    url = "https://github.com/agendav/agendav/releases/download/3.3.1/agendav-3.3.1.tar.gz"
-    sha256 = "aec1038845ea9b489f575028d092fb7ef3dbee7dcf302783a3f6d383e7473030"
+    url = "https://github.com/agendav/agendav/archive/refs/tags/3.4.0.tar.gz"
+    sha256 = "38baeed39d53fe81f6f5104919b3dbdb581687629a0d27c52f7e1627072d65a2"
     autoupdate.strategy = "latest_github_tag"
 
     [resources.system_user]
